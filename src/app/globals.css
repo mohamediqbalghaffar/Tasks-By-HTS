@@ -1,0 +1,401 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- FONT DEFINITION --- */
+/* This rule defines the local Speda font for the application. */
+@font-face {
+  font-family: 'Speda';
+  src: url('/fonts/Speda.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* --- DYNAMIC BACKGROUND --- */
+/* This creates a multi-layered radial gradient background for a modern look. */
+html {
+  --bg-color-dark: hsl(220, 15%, 5%);
+  background-color: #f0f2f5;
+  background-image: none;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+html.dark {
+  background-color: hsl(220, 15%, 5%);
+}
+
+/* --- END DYNAMIC BACKGROUND --- */
+
+
+body {
+  font-family: "Noto Sans Arabic", "Speda", Arial, Helvetica, sans-serif;
+
+  /* Glass effect: semi-transparent background + backdrop-filter */
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+  text-shadow: 0 0 8px hsl(var(--background) / 0.6);
+}
+
+@layer base {
+  :root {
+    /* Enforcing a Dark Theme with white text for high contrast */
+    --background: 220 15% 95% / 0.8;
+    /* Light background */
+    --foreground: 220 15% 15%;
+    /* Dark text */
+
+    --card: 250 40% 100% / 0.6;
+    /* White, more transparent */
+    --card-foreground: 220 15% 15%;
+
+    --popover: 250 40% 100% / 0.8;
+    /* More opaque popover for readability */
+    --popover-foreground: 220 15% 15%;
+
+    --primary: 250 50% 55%;
+    /* A vibrant purple for active elements */
+    --primary-foreground: 0 0% 100%;
+    /* White text */
+
+    --primary-gradient-start: 178 90% 65%;
+    --primary-gradient-end: 191 100% 45%;
+
+    --secondary: 220 10% 90%;
+    /* Light gray for secondary elements */
+    --secondary-foreground: 220 15% 15%;
+
+    --muted: 220 10% 90% / 0.7;
+    /* Muted light gray */
+    --muted-foreground: 220 10% 40%;
+    /* Darker muted text */
+
+    --accent: 250 50% 55%;
+    /* Using new primary purple as accent */
+    --accent-foreground: 0 0% 100%;
+    /* White text on accent */
+
+    --destructive: 0 70% 65%;
+    /* Bright Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 10% 85% / 0.7;
+    /* Subtle light gray border */
+    --input: 220 20% 100% / 0.6;
+    /* Semi-transparent white input background */
+    --ring: 250 60% 65%;
+    /* Brighter Purple ring */
+
+    --radius: 1rem;
+
+    /* Chart colors */
+    --chart-1: 220 10% 70%;
+    --chart-2: 28 100% 78%;
+    --chart-3: 179 85% 60%;
+    --chart-4: 210 60% 75%;
+    --chart-5: 160 60% 65%;
+
+    /* Sidebar colors */
+    --sidebar-background: 220 10% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 220 20% 90%;
+    --sidebar-primary-foreground: 220 5% 10%;
+    --sidebar-accent: 178 90% 65%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 10% 25%;
+    --sidebar-ring: 178 90% 65%;
+
+    /* Eisenhower Quadrant Colors */
+    --quadrant-do-color: 140 60% 50% / 0.15;
+    /* Green */
+    --quadrant-schedule-color: 45 80% 60% / 0.15;
+    /* Orange */
+    --quadrant-delegate-color: 210 80% 65% / 0.15;
+    /* Blue */
+    --quadrant-eliminate-color: 0 0% 70% / 0.15;
+    /* Gray */
+  }
+
+  .dark {
+    --background: 220 15% 5% / 0.5;
+    /* Semi-transparent Dark Slate Blue */
+    --foreground: 0 0% 100%;
+    /* Clear, bright white text */
+
+    --card: 250 40% 25% / 0.3;
+    /* Deeper purple, more transparent */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 250 40% 15% / 0.7;
+    /* More opaque popover for readability */
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 250 50% 55%;
+    /* A vibrant purple for active elements */
+    --primary-foreground: 0 0% 100%;
+    /* White text */
+
+    --secondary: 0 0% 100%;
+    /* White text for high contrast */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 250 30% 35% / 0.5;
+    /* Muted purple for inactive elements */
+    --muted-foreground: 0 0% 80%;
+    /* Slightly dimmer white for muted text */
+
+    --accent: 250 50% 55%;
+    /* Using new primary purple as accent */
+    --accent-foreground: 0 0% 100%;
+    /* White text on accent */
+
+    --destructive: 0 70% 65%;
+    /* Bright Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 250 30% 50% / 0.3;
+    /* Subtle purple border */
+    --input: 250 20% 20% / 0.5;
+    /* Semi-transparent input background */
+    --ring: 250 60% 65%;
+    /* Brighter Purple ring */
+
+    /* Eisenhower Quadrant Colors for dark mode*/
+    --quadrant-do-color: 140 60% 50% / 0.2;
+    --quadrant-schedule-color: 45 80% 60% / 0.2;
+    --quadrant-delegate-color: 210 80% 65% / 0.2;
+    --quadrant-eliminate-color: 0 0% 70% / 0.2;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    background-color: transparent;
+    /* Make body transparent to see html background */
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  .btn-gradient {
+    background-image: linear-gradient(to right, hsl(var(--primary-gradient-start)), hsl(var(--primary-gradient-end)));
+    color: hsl(var(--primary-foreground));
+    border: none;
+  }
+
+  .btn-gradient:hover {
+    opacity: 0.9;
+  }
+
+  .text-gradient {
+    background-image: linear-gradient(to right, hsl(var(--primary-gradient-start)), hsl(var(--primary-gradient-end)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Main Glass Effect for major UI surfaces */
+  .glass-card,
+  [data-radix-popover-content][data-state="open"],
+  [data-radix-dialog-content][data-state="open"],
+  [data-radix-alert-dialog-content][data-state="open"],
+  .bg-nav-glass,
+  [data-sidebar="sidebar"] {
+    background-color: hsl(var(--card)) !important;
+    /* Uses the semi-transparent --card color */
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border-width: 1px;
+    border-style: solid;
+    border-color: hsl(var(--border));
+  }
+
+  /* Specific glass effect for inputs and textareas to ensure they also get the blur */
+  .glass-input {
+    background-color: hsl(var(--input));
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    border-color: hsl(var(--border));
+  }
+
+  /* Eisenhower Matrix Quadrant Styles */
+  .quadrant-do {
+    background-color: hsl(var(--quadrant-do-color));
+  }
+
+  .quadrant-schedule {
+    background-color: hsl(var(--quadrant-schedule-color));
+  }
+
+  .quadrant-delegate {
+    background-color: hsl(var(--quadrant-delegate-color));
+  }
+
+  .quadrant-eliminate {
+    background-color: hsl(var(--quadrant-eliminate-color));
+  }
+
+  .quadrant-label {
+    @apply font-bold text-lg opacity-60 text-foreground;
+  }
+
+  .style-glowing-border {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+}
+
+
+.responsive-container {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    height: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    /* Changed for sidebar layout */
+  }
+}
+
+/* New Standby Page Widget Style */
+.standby-widget {
+  background-color: rgba(26, 26, 26, 0.6);
+  /* Semi-transparent dark background */
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+  border-radius: 1.5rem;
+  /* 24px */
+  color: #ffffff;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.day_selected {
+  @apply bg-primary text-primary-foreground;
+}
+
+.day_selected:hover {
+  @apply bg-primary/90 text-primary-foreground;
+}
+
+.day_today {
+  @apply bg-accent/50 text-accent-foreground;
+}
+
+/* New Urgent Item Animation */
+@keyframes urgent-pulse-glow {
+
+  0%,
+  100% {
+    border-color: hsl(var(--destructive) / 0.7);
+    box-shadow: inset 0 0 2px hsl(var(--destructive) / 0.6),
+      inset 0 0 5px hsl(var(--destructive) / 0.4),
+      inset 0 0 10px hsl(var(--destructive) / 0.2);
+  }
+
+  50% {
+    border-color: hsl(var(--destructive) / 1);
+    box-shadow: inset 0 0 5px hsl(var(--destructive) / 0.8),
+      inset 0 0 15px hsl(var(--destructive) / 0.6),
+      inset 0 0 25px hsl(var(--destructive) / 0.4);
+  }
+}
+
+.urgent-pulse-glow {
+  animation: urgent-pulse-glow 2s infinite ease-in-out;
+  border-width: 1px;
+}
+
+/* New Expired Item Animation (Yellow) */
+@keyframes expired-pulse-glow {
+
+  0%,
+  100% {
+    border-color: hsl(45 93% 47% / 0.7);
+    box-shadow: inset 0 0 2px hsl(45 93% 47% / 0.6),
+      inset 0 0 5px hsl(45 93% 47% / 0.4),
+      inset 0 0 10px hsl(45 93% 47% / 0.2);
+  }
+
+  50% {
+    border-color: hsl(45 93% 47% / 1);
+    box-shadow: inset 0 0 5px hsl(45 93% 47% / 0.8),
+      inset 0 0 15px hsl(45 93% 47% / 0.6),
+      inset 0 0 25px hsl(45 93% 47% / 0.4);
+  }
+}
+
+.expired-pulse-glow {
+  animation: expired-pulse-glow 2s infinite ease-in-out;
+  border-width: 1px;
+}
+
+/* CSS Marquee Animation */
+@keyframes marquee-ltr {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes marquee-rtl {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.animate-marquee-ltr>span {
+  animation: marquee-ltr 15s linear infinite;
+}
+
+.animate-marquee-rtl>span {
+  animation: marquee-rtl 15s linear infinite;
+}
+
+/* View Mode Styles */
+/* Desktop Mode - Wide layout, multi-column grids, standard spacing */
+[data-view="desktop"] {
+  --view-container-max-width: 100%;
+  --view-spacing: 1rem;
+  --view-gap: 1rem;
+  --view-font-size: 1rem;
+  --view-button-height: 2.5rem;
+}
+
+[data-view="desktop"] main {
+  max-width: var(--view-container-max-width);
+}
+
+/* ============================================ */
+/* MOBILE MODE - Complete Mobile-First Redesign */
+/* ============================================ */
+
+[data-view="mobile"] {
+  --view-container-max-width: 100%;
+  --view-spacing: 1rem;
+  --view-gap: 1rem;
+  --view-font-size: 16px;
+  --view-button-height: 44px;
+}

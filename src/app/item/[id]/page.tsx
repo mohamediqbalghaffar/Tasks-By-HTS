@@ -1,0 +1,74 @@
+
+'use client';
+
+import * as React from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTask, Task, ApprovalLetter } from '@/contexts/TaskContext';
+import { useUI } from '@/contexts/UIContext';
+import LoadingAnimation from '@/components/ui/loading-animation';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { renderDetailContent } from '@/lib/render-detail-content';
+import { useMemo } from 'react';
+
+export default function ItemDetailPage() {
+    const router = useRouter();
+    const params = useParams();
+    const id = params.id as string;
+
+    const { t, language, getDateFnsLocale } = useLanguage();
+
+    const {
+        getItemById,
+        isLoading,
+        handlePriorityChange,
+        handleReminderChange,
+        handleUrgencyChange,
+        handleDelete,
+        calculateDefaultReminder
+    } = useTask();
+
+    const { handleOpenEditField } = useUI();
+
+    const actions = useMemo(() => ({
+        handlePriorityChange,
+        handleReminderChange,
+        handleUrgencyChange,
+        handleOpenEditField,
+        handleDelete,
+        calculateDefaultReminder
+    }), [handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder]);
+
+    const itemResult = getItemById(id);
+    const item = itemResult ? itemResult.item : null;
+
+    if (isLoading || !item) {
+        // If still loading or item not found after loading, show a loader.
+        // This prevents a flash of "not found" before data is available.
+        return <LoadingAnimation text={t('loadingData')} />;
+    }
+
+    const isTask = 'taskNumber' in item;
+
+    const title = isTask
+        ? t('taskDetailModalTitle', { taskName: item.name })
+        : t('letterDetailModalTitle', { letterName: item.name });
+
+    return (
+        <div className="flex flex-col h-full">
+            <header className="p-4 border-b flex items-center gap-4 shrink-0">
+                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <h1 className="text-lg font-bold truncate">{title}</h1>
+            </header>
+            <ScrollArea className="flex-grow">
+                <div className="p-4">
+                    {renderDetailContent(item, actions, t, getDateFnsLocale)}
+                </div>
+            </ScrollArea>
+        </div>
+    );
+}

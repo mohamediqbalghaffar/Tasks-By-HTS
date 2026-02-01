@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Default deny all writes, allow public reads.
+    // This establishes a secure baseline.
+    match /{allPaths=**} {
+      allow read;
+      allow write: if false;
+    }
+
+    // Allow AUTHENTICATED users to write to their OWN profile picture folder.
+    // This rule is evaluated separately and grants write permission where appropriate.
+    match /profilePictures/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow AUTHENTICATED users to write to their OWN fonts folder.
+    // This rule is evaluated separately and grants the necessary write permission.
+    match /fonts/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

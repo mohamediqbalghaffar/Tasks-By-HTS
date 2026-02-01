@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check ownership
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Checking if the user has the admin role from their user document
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Rules for the 'counters' collection (for share code generation)
+    match /counters/{counterId} {
+      // Allow authenticated users to read and write counters
+      // This is needed for the share code generation system
+      allow read, write: if isAuthenticated();
+    }
+
+    // Rules for the 'users' collection
+    match /users/{userId} {
+      // Users can read any user's profile (needed for share code lookups)
+      // Also allow unauthenticated reads when querying by email (for resend verification)
+      allow read: if isAuthenticated() || request.query.limit == 1;
+      allow write: if isOwner(userId);
+
+      // Rules for subcollections within a user's document
+      match /{collection}/{docId} {
+        // General rule: users can manage documents in their own subcollections
+        allow read, write, delete: if isOwner(userId);
+
+        // Rules for shares subcollection (tracking who an item is shared with)
+        match /shares/{shareId} {
+            allow read, write: if isOwner(userId);
+            // Allow the recipient to update their 'lastSeen' status
+            allow update: if isAuthenticated() && request.auth.uid == shareId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen']);
+        }
+      }
+
+      // Rules for receivedItems (shared tasks/letters)
+      match /receivedItems/{itemId} {
+        allow read, update, delete: if isOwner(userId);
+        allow create: if isAuthenticated() && request.resource.data.senderUid == request.auth.uid;
+      }
+
+      // Specific validation for the 'savedChats' collection
+      match /savedChats/{chatId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+                                 request.resource.data.title is string &&
+                                 request.resource.data.userId == userId &&
+                                 request.resource.data.messages is list;
+      }
+
+      // Specific validation for the 'customFonts' collection
+      match /customFonts/{fontId} {
+        // Allow users to manage their own fonts.
+        allow read, delete: if isOwner(userId);
+        // Validate the data when creating or updating a font document.
+        allow create, update: if isOwner(userId) &&
+                                 request.resource.data.name is string &&
+                                 request.resource.data.url is string &&
+                                 request.resource.data.fileName is string &&
+                                 request.resource.data.userId == userId;
+      }
+    }
+
+    // Rules for the 'verificationCodes' collection
+    match /verificationCodes/{userId} {
+      // Allow reading own verification codes when authenticated
+      allow read: if isOwner(userId);
+      // Allow creation during signup (when user is authenticated)
+      // Also allow unauthenticated writes for resend verification feature
+      allow create, update: if isAuthenticated() || 
+                              (request.resource.data.email is string &&
+                               request.resource.data.code is string &&
+                               request.resource.data.userId is string);
+    }
+
+    // Rules for system settings (companies, positions)
+    match /systemSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
