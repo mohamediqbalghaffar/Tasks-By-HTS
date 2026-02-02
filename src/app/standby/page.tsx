@@ -109,10 +109,11 @@ export default function StandbyPage() {
     const toggleOrientation = () => {
         const newOrientation = orientation === 'portrait' ? 'landscape' : 'portrait';
 
-        if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock(newOrientation.includes('landscape') ? 'landscape-primary' : 'portrait-primary')
+        // @ts-ignore - 'lock' is experimental and missing in some TS definitions
+        if (screen.orientation && (screen.orientation as any).lock) {
+            (screen.orientation as any).lock(newOrientation.includes('landscape') ? 'landscape-primary' : 'portrait-primary')
                 .then(() => setOrientation(newOrientation))
-                .catch((error) => console.error("Could not lock screen orientation:", error));
+                .catch((error: any) => console.error("Could not lock screen orientation:", error));
         } else if (screen.orientation) { // For browsers that don't support lock but have the property
             console.warn("Screen orientation lock is not supported on this browser.");
             setOrientation(newOrientation); // Optimistically set state
