@@ -1,7 +1,6 @@
-
+import * as React from 'react';
 'use client';
 
-import * as React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -109,11 +108,12 @@ export default function StandbyPage() {
     const toggleOrientation = () => {
         const newOrientation = orientation === 'portrait' ? 'landscape' : 'portrait';
 
-        if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock(newOrientation.includes('landscape') ? 'landscape-primary' : 'portrait-primary')
+        // Safely check for lock() because TypeScript's DOM typings may not include it
+        if (typeof (screen as any)?.orientation?.lock === 'function') {
+            (screen as any).orientation.lock(newOrientation.includes('landscape') ? 'landscape-primary' : 'portrait-primary')
                 .then(() => setOrientation(newOrientation))
-                .catch((error) => console.error("Could not lock screen orientation:", error));
-        } else if (screen.orientation) { // For browsers that don't support lock but have the property
+                .catch((error: any) => console.error("Could not lock screen orientation:", error));
+        } else if ((screen as any).orientation) { // For browsers that don't support lock but have the property
             console.warn("Screen orientation lock is not supported on this browser.");
             setOrientation(newOrientation); // Optimistically set state
         }
@@ -226,7 +226,7 @@ export default function StandbyPage() {
                                     {standbyExpired.nextThree.map(item => (
                                         <div key={item.id} className="p-2 rounded-md bg-red-500/10 text-xs md:text-sm flex justify-between items-center">
                                             <span className="text-white/70 truncate pr-4">{item.name}</span>
-                                            {item.reminder && <span className="text-red-400/80 text-xs shrink-0">{format(item.reminder, 'P', { locale: getDateFnsLocale() })}</span>}
+                                            {item.reminder && <span className="text-red-400/80 text-xs shrink-0">{format(item.reminder, 'P', { locale: getDateFnsLocale() })}</span>}  
                                         </div>
                                     ))}
                                 </div>
