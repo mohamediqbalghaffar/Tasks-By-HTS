@@ -1,24 +1,23 @@
-
 'use client';
 
 import * as React from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTask, Task, ApprovalLetter } from '@/contexts/TaskContext';
+import { useTask } from '@/contexts/TaskContext';
 import { useUI } from '@/contexts/UIContext';
 import LoadingAnimation from '@/components/ui/loading-animation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { renderDetailContent } from '@/lib/render-detail-content';
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 
-export default function ItemDetailPage() {
+function ItemDetailContent() {
     const router = useRouter();
-    const params = useParams();
-    const id = params.id as string;
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
 
-    const { t, language, getDateFnsLocale } = useLanguage();
+    const { t, getDateFnsLocale } = useLanguage();
 
     const {
         getItemById,
@@ -41,13 +40,22 @@ export default function ItemDetailPage() {
         calculateDefaultReminder
     }), [handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder]);
 
-    const itemResult = getItemById(id);
+    const itemResult = id ? getItemById(id) : null;
     const item = itemResult ? itemResult.item : null;
 
-    if (isLoading || !item) {
-        // If still loading or item not found after loading, show a loader.
-        // This prevents a flash of "not found" before data is available.
+    if (isLoading) {
         return <LoadingAnimation text={t('loadingData')} />;
+    }
+
+    if (!item || !id) {
+        // Handle case where ID is missing or item not found
+        // Maybe redirect back or show error
+        return (
+            <div className="flex flex-col h-full items-center justify-center gap-4">
+                <p>Item not found</p>
+                <Button onClick={() => router.back()}>Go Back</Button>
+            </div>
+        );
     }
 
     const isTask = 'taskNumber' in item;
@@ -70,5 +78,13 @@ export default function ItemDetailPage() {
                 </div>
             </ScrollArea>
         </div>
+    );
+}
+
+export default function ItemDetailPage() {
+    return (
+        <Suspense fallback={<LoadingAnimation text="Loading..." />}>
+            <ItemDetailContent />
+        </Suspense>
     );
 }
