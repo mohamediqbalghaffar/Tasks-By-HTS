@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTask } from '@/contexts/TaskContext';
 import { useUI } from '@/contexts/UIContext';
@@ -10,12 +10,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { renderDetailContent } from '@/lib/render-detail-content';
-import { useMemo, Suspense } from 'react';
+import { useMemo } from 'react';
 
-function ItemDetailContent() {
+export default function ItemDetailPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const id = searchParams.get('id');
+    const params = useParams();
+    const id = Array.isArray(params?.id) ? params?.id[0] : params?.id;
 
     const { t, getDateFnsLocale } = useLanguage();
 
@@ -78,13 +78,5 @@ function ItemDetailContent() {
                 </div>
             </ScrollArea>
         </div>
-    );
-}
-
-export default function ItemDetailPage() {
-    return (
-        <Suspense fallback={<LoadingAnimation text="Loading..." />}>
-            <ItemDetailContent />
-        </Suspense>
     );
 }

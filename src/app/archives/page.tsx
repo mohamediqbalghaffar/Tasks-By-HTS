@@ -156,7 +156,7 @@ export default function ArchivesPage() {
             <li key={item.id} className="group relative p-3 border border-border/50 bg-background/50 rounded-lg flex justify-between items-center flex-row-reverse transition-all hover:bg-muted/30 hover:shadow-sm hover:border-primary/20">
                 <div
                     className="flex-grow cursor-pointer text-right min-w-0"
-                    onClick={() => router.push(`/item?id=${item.id}`)}
+                    onClick={() => router.push(`/item/${item.id}`)}
                 >
                     <p className="font-semibold truncate text-sm group-hover:text-primary transition-colors">{item.name}</p>
                     {listContext === 'completed' && (

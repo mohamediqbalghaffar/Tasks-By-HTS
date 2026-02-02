@@ -168,7 +168,7 @@ export default function DataAnalysisPage() {
 
     const handleScatterClick = (props: any) => {
         if (props && props.id) {
-            router.push(`/item?id=${props.id}`);
+            router.push(`/item/${props.id}`);
         }
     };
 
