@@ -4,10 +4,20 @@ import './globals.css';
 import { ClientLayout } from './client-layout';
 
 export const metadata: Metadata = {
-  title: 'Tasks (by HTS)',
-  description: 'Task management application by Halabja Telecom Services',
+  title: "Tasks By HTS",
+  description: "Task management system for HTS Group",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  viewport: "minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Tasks By HTS",
+  },
   icons: {
-    icon: 'https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Cairo:wght@400;700&display=swap',
+    icon: "/icons/icon-192x192.png",
+    shortcut: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
   },
 };
 

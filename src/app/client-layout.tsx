@@ -387,6 +387,8 @@ const EditDialog = () => {
     );
 }
 
+import { InstallPrompt } from '@/components/InstallPrompt';
+
 export function ClientLayout({
     children,
 }: Readonly<{
@@ -398,6 +400,7 @@ export function ClientLayout({
                 <UIProvider>
                     <TaskProvider>
                         <AppInitializer>
+                            <InstallPrompt />
                             <RootLayoutContent>
                                 {children}
                             </RootLayoutContent>
