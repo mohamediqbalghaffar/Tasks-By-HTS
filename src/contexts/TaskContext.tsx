@@ -32,6 +32,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUI } from '@/contexts/UIContext';
 import { translations } from '@/lib/translations';
 import { useScheduledBackup } from '@/hooks/useScheduledBackup';
+import {
+    requestNotificationPermission,
+    sendReminderNotification,
+    areNotificationsEnabled,
+    hasBeenNotified,
+    markAsNotified,
+    clearNotified
+} from '@/lib/notification-service';
 
 // --- Types (Re-exported from centralized location if possible, but kept here for now) ---
 export type Priority = 'low' | 'medium' | 'high';
@@ -248,6 +256,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         setIsMounted(true);
         const isAllowed = localStorage.getItem(LOCAL_STORAGE_ALLOWED_KEY) === 'true';
         setIsLocalStorageAllowed(isAllowed);
+
+        // Request notification permission after a short delay to avoid overwhelming the user
+        const timer = setTimeout(() => {
+            if ('Notification' in window && Notification.permission === 'default') {
+                requestNotificationPermission().catch(console.error);
+            }
+        }, 3000); // Wait 3 seconds after app loads
+
+        return () => clearTimeout(timer);
     }, []);
 
     const loadDataFromLocalStorage = useCallback(() => {
@@ -564,6 +581,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, tasks, approvalLetters, t]);
 
     const handleReminderChange = useCallback(async (id: string, type: 'task' | 'letter', date: Date | null) => {
+        // Clear notification status for this item when reminder changes
+        const item = (type === 'task' ? [...tasks, ...expiredTasksList] : [...approvalLetters, ...expiredApprovalLettersList]).find(i => i.id === id);
+        if (item?.reminder) {
+            const oldNotificationId = `${type}-${id}-${item.reminder.getTime()}`;
+            clearNotified(oldNotificationId);
+        }
+
         if (currentUser && db) {
             try {
                 const collectionName = type === 'task' ? 'tasks' : 'approvalLetters';
@@ -584,7 +608,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             setList(updatedList as any);
             toast({ title: t('reminderUpdated') });
         }
-    }, [currentUser, tasks, approvalLetters, t]);
+    }, [currentUser, tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, t]);
 
     const handlePriorityChange = useCallback(async (id: string, type: 'task' | 'letter', priority: number) => {
         if (currentUser && db) {
@@ -1091,6 +1115,49 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             unsubReceived();
         }
     }, [currentUser, isLocalStorageAllowed, loadDataFromLocalStorage]);
+
+    // Check for expired reminders and send notifications
+    useEffect(() => {
+        if (!isMounted) return;
+
+        const checkReminders = () => {
+            if (!areNotificationsEnabled()) return;
+
+            const now = new Date();
+
+            // Check tasks
+            [...tasks, ...expiredTasksList].forEach(task => {
+                if (task.reminder && !task.isDone && isBefore(task.reminder, now)) {
+                    const notificationId = `task-${task.id}-${task.reminder.getTime()}`;
+
+                    if (!hasBeenNotified(notificationId)) {
+                        sendReminderNotification(task, 'task', language);
+                        markAsNotified(notificationId);
+                    }
+                }
+            });
+
+            // Check approval letters
+            [...approvalLetters, ...expiredApprovalLettersList].forEach(letter => {
+                if (letter.reminder && !letter.isDone && isBefore(letter.reminder, now)) {
+                    const notificationId = `letter-${letter.id}-${letter.reminder.getTime()}`;
+
+                    if (!hasBeenNotified(notificationId)) {
+                        sendReminderNotification(letter, 'letter', language);
+                        markAsNotified(notificationId);
+                    }
+                }
+            });
+        };
+
+        // Check immediately on mount
+        checkReminders();
+
+        // Then check every minute
+        const interval = setInterval(checkReminders, 60000); // 60 seconds
+
+        return () => clearInterval(interval);
+    }, [isMounted, tasks, expiredTasksList, approvalLetters, expiredApprovalLettersList, language]);
 
     const handleAutoBackup = useCallback(async () => {
         if (!currentUser?.email) return;
