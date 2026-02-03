@@ -52,12 +52,16 @@ export function sendNotification(
   data?: NotificationData,
   icon?: string
 ): Notification | null {
+  console.log('[NotificationService] sendNotification called:', { title, body, data, icon });
+
   if (!areNotificationsEnabled()) {
-    console.warn('Notifications are not enabled');
+    console.warn('[NotificationService] Notifications are not enabled. Permission:',
+      typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A');
     return null;
   }
 
   try {
+    console.log('[NotificationService] Creating notification...');
     const notification = new Notification(title, {
       body,
       icon: icon || '/icons/icon-192x192.png',
@@ -65,25 +69,27 @@ export function sendNotification(
       tag: data?.id || `notification-${Date.now()}`,
       requireInteraction: true, // Keep notification visible until user interacts
       data: data,
-      vibrate: [200, 100, 200], // Vibration pattern for mobile
     });
+
+    console.log('[NotificationService] Notification created successfully');
 
     // Handle notification click
     notification.onclick = (event) => {
       event.preventDefault();
+      console.log('[NotificationService] Notification clicked:', data);
       window.focus();
-      
+
       // If we have item data, navigate to it
       if (data?.id) {
         window.location.href = `/item/${data.id}`;
       }
-      
+
       notification.close();
     };
 
     return notification;
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('[NotificationService] Error sending notification:', error);
     return null;
   }
 }
@@ -99,14 +105,18 @@ export function sendReminderNotification(
   type: 'task' | 'letter',
   language: string = 'ckb'
 ): Notification | null {
+  console.log('[NotificationService] sendReminderNotification called:', { item, type, language });
+
   const isKurdish = language === 'ckb';
-  
-  const title = isKurdish 
+
+  const title = isKurdish
     ? `⏰ یادخستنەوە: ${type === 'task' ? 'ئەرک' : 'نامە'}`
     : `⏰ Reminder: ${type === 'task' ? 'Task' : 'Letter'}`;
-  
+
   const body = item.name || (isKurdish ? 'بێ ناونیشان' : 'Untitled');
-  
+
+  console.log('[NotificationService] Sending notification with title:', title, 'body:', body);
+
   return sendNotification(title, body, {
     id: item.id,
     type,
@@ -120,7 +130,7 @@ export function sendReminderNotification(
  */
 export async function testNotification(language: string = 'ckb'): Promise<boolean> {
   const permission = await requestNotificationPermission();
-  
+
   if (permission === 'granted') {
     const isKurdish = language === 'ckb';
     sendNotification(
@@ -129,7 +139,7 @@ export async function testNotification(language: string = 'ckb'): Promise<boolea
     );
     return true;
   }
-  
+
   return false;
 }
 

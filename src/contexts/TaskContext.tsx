@@ -1121,42 +1121,102 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         if (!isMounted) return;
 
         const checkReminders = () => {
-            if (!areNotificationsEnabled()) return;
+            console.log('[Notifications] Checking reminders...', {
+                notificationsEnabled: areNotificationsEnabled(),
+                permission: typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A',
+                tasksCount: tasks.length,
+                lettersCount: approvalLetters.length
+            });
+
+            if (!areNotificationsEnabled()) {
+                console.warn('[Notifications] Notifications not enabled. Permission:',
+                    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A');
+                return;
+            }
 
             const now = new Date();
+            console.log('[Notifications] Current time:', now.toISOString());
 
             // Check tasks
             [...tasks, ...expiredTasksList].forEach(task => {
-                if (task.reminder && !task.isDone && isBefore(task.reminder, now)) {
-                    const notificationId = `task-${task.id}-${task.reminder.getTime()}`;
+                if (task.reminder && !task.isDone) {
+                    const reminderTime = new Date(task.reminder);
+                    const isExpired = isBefore(reminderTime, now);
 
-                    if (!hasBeenNotified(notificationId)) {
-                        sendReminderNotification(task, 'task', language);
-                        markAsNotified(notificationId);
+                    console.log('[Notifications] Task:', {
+                        id: task.id,
+                        name: task.name,
+                        reminder: reminderTime.toISOString(),
+                        now: now.toISOString(),
+                        isExpired,
+                        isDone: task.isDone
+                    });
+
+                    if (isExpired) {
+                        const notificationId = `task-${task.id}-${reminderTime.getTime()}`;
+
+                        if (!hasBeenNotified(notificationId)) {
+                            console.log('[Notifications] Sending notification for task:', task.name);
+                            const notification = sendReminderNotification(task, 'task', language);
+                            if (notification) {
+                                markAsNotified(notificationId);
+                                console.log('[Notifications] Notification sent successfully');
+                            } else {
+                                console.error('[Notifications] Failed to send notification');
+                            }
+                        } else {
+                            console.log('[Notifications] Already notified for task:', task.name);
+                        }
                     }
                 }
             });
 
             // Check approval letters
             [...approvalLetters, ...expiredApprovalLettersList].forEach(letter => {
-                if (letter.reminder && !letter.isDone && isBefore(letter.reminder, now)) {
-                    const notificationId = `letter-${letter.id}-${letter.reminder.getTime()}`;
+                if (letter.reminder && !letter.isDone) {
+                    const reminderTime = new Date(letter.reminder);
+                    const isExpired = isBefore(reminderTime, now);
 
-                    if (!hasBeenNotified(notificationId)) {
-                        sendReminderNotification(letter, 'letter', language);
-                        markAsNotified(notificationId);
+                    console.log('[Notifications] Letter:', {
+                        id: letter.id,
+                        name: letter.name,
+                        reminder: reminderTime.toISOString(),
+                        now: now.toISOString(),
+                        isExpired,
+                        isDone: letter.isDone
+                    });
+
+                    if (isExpired) {
+                        const notificationId = `letter-${letter.id}-${reminderTime.getTime()}`;
+
+                        if (!hasBeenNotified(notificationId)) {
+                            console.log('[Notifications] Sending notification for letter:', letter.name);
+                            const notification = sendReminderNotification(letter, 'letter', language);
+                            if (notification) {
+                                markAsNotified(notificationId);
+                                console.log('[Notifications] Notification sent successfully');
+                            } else {
+                                console.error('[Notifications] Failed to send notification');
+                            }
+                        } else {
+                            console.log('[Notifications] Already notified for letter:', letter.name);
+                        }
                     }
                 }
             });
         };
 
         // Check immediately on mount
+        console.log('[Notifications] Starting reminder checker...');
         checkReminders();
 
-        // Then check every minute
-        const interval = setInterval(checkReminders, 60000); // 60 seconds
+        // Check every 15 seconds for better responsiveness
+        const interval = setInterval(checkReminders, 15000); // 15 seconds
 
-        return () => clearInterval(interval);
+        return () => {
+            console.log('[Notifications] Stopping reminder checker...');
+            clearInterval(interval);
+        };
     }, [isMounted, tasks, expiredTasksList, approvalLetters, expiredApprovalLettersList, language]);
 
     const handleAutoBackup = useCallback(async () => {
