@@ -19,7 +19,7 @@ import { DEFAULT_COMPANIES, DEFAULT_OFFICES, DEFAULT_POSITIONS, isHTSCompany } f
 export default function AuthPage() {
     const router = useRouter();
     const { t, language } = useLanguage();
-    const { currentUser, handleLogin, handleSignup, handlePasswordReset, handleVerifyCode, handleResendVerificationCode, handleResendVerificationByEmail, handleUserInitiatedLogout } = useAuth();
+    const { currentUser, handleLogin, handleSignup, handlePasswordReset, handleUserInitiatedLogout } = useAuth();
     const { toast } = useToast();
 
     const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
@@ -30,39 +30,24 @@ export default function AuthPage() {
     const [position, setPosition] = useState('');
     const [role, setRole] = useState<'admin' | 'user'>('user');
     const [adminCode, setAdminCode] = useState('');
+    const [signupCode, setSignupCode] = useState(''); // New passcode field
     const [office, setOffice] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [verificationSent, setVerificationSent] = useState(false);
-    const [verificationEmail, setVerificationEmail] = useState('');
-    const [verificationCode, setVerificationCode] = useState('');
-    const [isVerifying, setIsVerifying] = useState(false);
 
     // Track if we've already attempted a redirect to prevent loops
     const hasRedirectedRef = React.useRef(false);
     const { userProfile } = useAuth();
 
-    // Only redirect if user is logged in AND email is verified AND not showing verification screen
+    // Redirect logged-in users to home
     React.useEffect(() => {
-        // If user is logged in but not verified, show verification screen
-        if (currentUser && userProfile && !userProfile.emailVerified) {
-            setVerificationSent(true);
-            setVerificationEmail(userProfile.email); // Ensure we have the email to show
-        }
-
-        // Don't redirect if we're showing the verification screen
-        if (verificationSent) {
-            return;
-        }
-
-        if (currentUser && userProfile?.emailVerified && !hasRedirectedRef.current) {
+        if (currentUser && userProfile && !hasRedirectedRef.current) {
             hasRedirectedRef.current = true;
             router.push('/');
-        } else if (!currentUser || !userProfile?.emailVerified) {
-            // Reset the redirect flag when user logs out or is unverified
+        } else if (!currentUser || !userProfile) {
             hasRedirectedRef.current = false;
         }
-    }, [currentUser, userProfile, router, verificationSent]);
+    }, [currentUser, userProfile, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -81,9 +66,20 @@ export default function AuthPage() {
                     });
                     return;
                 }
+
+                // Verify signup code
+                if (signupCode !== '99@@') {
+                    toast({
+                        title: t('error'),
+                        description: t('invalidSignUpCode') || 'Invalid sign-up code. Please enter the correct code to create an account.',
+                        variant: 'destructive',
+                    });
+                    return;
+                }
+
                 await handleSignup(email, password, name, company, position, role, office);
-                setVerificationSent(true);
-                setVerificationEmail(email);
+                // Account created and verified, redirect handled by useEffect or explicit push if needed
+                router.push('/');
             } else if (mode === 'reset') {
                 await handlePasswordReset(email);
                 setMode('login');
@@ -96,132 +92,6 @@ export default function AuthPage() {
     };
 
     const isRtl = language === 'ku';
-
-    const handleVerifySubmit = async () => {
-        if (!verificationCode || verificationCode.length !== 6) {
-            return;
-        }
-
-        setIsVerifying(true);
-        try {
-            await handleVerifyCode(verificationCode);
-            // On success, redirect to home
-            router.push('/');
-        } catch (error) {
-            console.error('Verification error:', error);
-        } finally {
-            setIsVerifying(false);
-        }
-    };
-
-    const handleResendCode = async () => {
-        setIsLoading(true);
-        try {
-            await handleResendVerificationCode();
-            setVerificationCode(''); // Clear the input
-        } catch (error) {
-            console.error('Resend error:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if (verificationSent) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4" dir={isRtl ? 'rtl' : 'ltr'}>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <Card className="w-full max-w-md backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 shadow-2xl border-white/20">
-                        <CardHeader className="text-center">
-                            <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1, rotate: 360 }}
-                                transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                                className="mx-auto w-20 h-20 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mb-6 ring-4 ring-blue-50 dark:ring-blue-900/30"
-                            >
-                                <Mail className="h-10 w-10 text-blue-600 dark:text-blue-400" />
-                            </motion.div>
-                            <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">{t('verifyYourEmail')}</CardTitle>
-                            <CardDescription className="text-base mt-2">
-                                {t('verificationCodeSentTo') || 'Verification code sent to'} <span className="font-bold text-foreground block mt-1 bg-muted px-2 py-1 rounded">{verificationEmail}</span>
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg flex items-start gap-3">
-                                <Send className="h-5 w-5 text-blue-600 mt-1 shrink-0" />
-                                <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
-                                    {t('enterCodeBelow') || 'Enter the 6-digit code sent to your email to verify your account.'}
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="verification-code">{t('verificationCode') || 'Verification Code'}</Label>
-                                <Input
-                                    id="verification-code"
-                                    type="text"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
-                                    maxLength={6}
-                                    value={verificationCode}
-                                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                                    placeholder="000000"
-                                    className="text-center text-2xl font-mono tracking-widest"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && verificationCode.length === 6) {
-                                            handleVerifySubmit();
-                                        }
-                                    }}
-                                />
-                            </div>
-
-                            <Button
-                                onClick={handleVerifySubmit}
-                                disabled={isVerifying || verificationCode.length !== 6}
-                                className="w-full h-12 text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                            >
-                                {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <CheckCircle2 className="mr-2 h-5 w-5" />
-                                {t('verifyEmail') || 'Verify Email'}
-                            </Button>
-
-                            <div className="text-center">
-                                <p className="text-sm text-muted-foreground mb-3">{t('didntReceiveCode') || "Didn't receive the code?"}</p>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="hover:bg-primary/5"
-                                    onClick={handleResendCode}
-                                    disabled={isLoading}
-                                >
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {t('resendCode') || 'Resend Code'}
-                                </Button>
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button
-                                variant="ghost"
-                                className="w-full hover:bg-muted"
-                                onClick={async () => {
-                                    await handleUserInitiatedLogout();
-                                    setVerificationSent(false);
-                                    setMode('login');
-                                    setVerificationCode('');
-                                }}
-                            >
-                                <ArrowLeft className={`h-4 w-4 ${isRtl ? 'ml-2' : 'mr-2'}`} />
-                                {t('backToLogin')}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </motion.div>
-            </div >
-        );
-    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100 via-indigo-50 to-purple-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 p-4" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -391,42 +261,6 @@ export default function AuthPage() {
                                     </div>
                                 </div>
 
-                                {mode === 'signup' && (
-                                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                        <p className="text-xs text-blue-800 dark:text-blue-200 mb-2">
-                                            {t('alreadySignedUp') || "Already signed up but didn't receive the code?"}
-                                        </p>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full h-8 text-xs"
-                                            onClick={async () => {
-                                                if (!email) {
-                                                    toast({
-                                                        title: t('error'),
-                                                        description: t('enterEmailFirst') || 'Please enter your email address first',
-                                                        variant: 'destructive'
-                                                    });
-                                                    return;
-                                                }
-                                                try {
-                                                    await handleResendVerificationByEmail(email);
-                                                    setVerificationSent(true);
-                                                    setVerificationEmail(email);
-                                                } catch (error) {
-                                                    // Error already handled in the function
-                                                }
-                                            }}
-                                            disabled={isLoading || !email}
-                                        >
-                                            {isLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                                            <Send className="mr-2 h-3 w-3" />
-                                            {t('resendVerificationEmail') || 'Resend Verification Email'}
-                                        </Button>
-                                    </div>
-                                )}
-
                                 {mode !== 'reset' && (
                                     <div className="space-y-2">
                                         <Label htmlFor="password">{t('password')}</Label>
@@ -452,6 +286,24 @@ export default function AuthPage() {
                                     </div>
                                 )}
 
+                                {mode === 'signup' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="signupCode">{t('signUpCode') || 'Sign-Up Code'}</Label>
+                                        <div className="relative group">
+                                            <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                            <Input
+                                                id="signupCode"
+                                                type="password"
+                                                placeholder={t('enterSignUpCode') || 'Enter sign-up code'}
+                                                value={signupCode}
+                                                onChange={(e) => setSignupCode(e.target.value)}
+                                                className={`pl-10 transition-all border-muted group-hover:border-primary/50 focus:border-primary ${isRtl ? 'pr-10 pl-3' : 'pl-10 pr-3'}`}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {mode === 'login' && (
                                     <div className={`flex ${isRtl ? 'justify-start' : 'justify-end'}`}>
                                         <Button
@@ -466,41 +318,7 @@ export default function AuthPage() {
                                     </div>
                                 )}
 
-                                {mode === 'login' && (
-                                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                        <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
-                                            {t('emailNotVerified') || "Email not verified?"}
-                                        </p>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="w-full"
-                                            onClick={async () => {
-                                                if (!email) {
-                                                    toast({
-                                                        title: t('error'),
-                                                        description: t('enterEmailFirst') || 'Please enter your email address first',
-                                                        variant: 'destructive'
-                                                    });
-                                                    return;
-                                                }
-                                                try {
-                                                    await handleResendVerificationByEmail(email);
-                                                    setVerificationSent(true);
-                                                    setVerificationEmail(email);
-                                                } catch (error) {
-                                                    // Error already handled in the function
-                                                }
-                                            }}
-                                            disabled={isLoading || !email}
-                                        >
-                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            <Send className="mr-2 h-4 w-4" />
-                                            {t('resendVerificationEmail') || 'Resend Verification Email'}
-                                        </Button>
-                                    </div>
-                                )}
+
                             </CardContent>
 
                             <CardFooter className="flex flex-col space-y-4 pb-8">

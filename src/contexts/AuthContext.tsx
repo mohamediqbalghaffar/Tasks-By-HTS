@@ -30,7 +30,6 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { generateVerificationCode, sendVerificationCodeEmail } from '@/lib/email';
 
 export interface StoredUser {
     uid: string;
@@ -46,24 +45,12 @@ export interface StoredUser {
     office?: string;
 }
 
-export interface VerificationCode {
-    userId: string;
-    code: string;
-    email: string;
-    createdAt: Timestamp;
-    expiresAt: Timestamp;
-    verified: boolean;
-}
-
 interface AuthContextType {
     currentUser: User | null;
     userProfile: StoredUser | null;
     isLoading: boolean;
     handleLogin: (email: string, pass: string) => Promise<void>;
     handleSignup: (email: string, pass: string, name: string, company: string, position: string, role?: 'admin' | 'user', office?: string) => Promise<void>;
-    handleVerifyCode: (code: string) => Promise<void>;
-    handleResendVerificationCode: () => Promise<void>;
-    handleResendVerificationByEmail: (email: string) => Promise<void>;
     handlePasswordReset: (email: string) => Promise<void>;
     handleUserInitiatedLogout: () => Promise<void>;
     handleDeleteAccount: () => Promise<void>;
@@ -137,23 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             setIsLoading(true);
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // Check email verification status from Firestore
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            const userData = userDoc.data();
-
-            if (!userData?.emailVerified) {
-                toast({
-                    title: t('emailNotVerified'),
-                    description: t('pleaseVerifyEmail'),
-                    variant: 'destructive'
-                });
-                await signOut(auth);
-                throw new Error('Email not verified');
-            }
-
+            await signInWithEmailAndPassword(auth, email, password);
             toast({ title: t('loginSuccess'), description: t('welcomeBack') });
         } catch (error: any) {
             console.error('Login error:', error);
@@ -162,7 +133,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             else if (error.code === 'auth/invalid-credential') errorMessage = t('invalidCredentials') || 'Invalid email or password. Please check your credentials and try again.';
             else if (error.code === 'auth/wrong-password') errorMessage = t('wrongPassword');
             else if (error.code === 'auth/invalid-email') errorMessage = t('invalidEmail');
-            else if (error.message === 'Email not verified') errorMessage = t('pleaseVerifyEmail');
 
             toast({ title: t('error'), description: errorMessage, variant: 'destructive' });
             throw error;
@@ -187,22 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // Generate verification code
-            const verificationCode = generateVerificationCode();
-            const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Code expires in 15 minutes
-
-            // Store verification code in Firestore
-            await setDoc(doc(db, 'verificationCodes', user.uid), {
-                userId: user.uid,
-                code: verificationCode,
-                email,
-                createdAt: serverTimestamp(),
-                expiresAt: expiresAt,
-                verified: false
-            });
-
-            // Create user profile
+            // Create user profile with email already verified
             await setDoc(doc(db, 'users', user.uid), {
                 uid: user.uid,
                 name,
@@ -210,21 +165,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 position,
                 email,
                 createdAt: serverTimestamp(),
-                emailVerified: false,
+                emailVerified: true, // Mark as verified immediately
                 shareCode: await getNextShareCode(db),
                 role: role || 'user',
                 ...(office && { office })
             });
 
-            // Send verification code email
-            await sendVerificationCodeEmail(email, name, verificationCode);
-
             toast({
                 title: t('signupSuccess'),
-                description: t('verificationCodeSent') || 'Verification code sent to your email'
+                description: t('accountCreated') || 'Account created successfully! You can now log in.'
             });
 
-            // Keep user signed in but unverified
         } catch (error: any) {
             console.error('Signup error:', error);
             let errorMessage = t('signupFailed');
@@ -233,192 +184,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             else if (error.code === 'auth/invalid-email') errorMessage = t('invalidEmail');
 
             toast({ title: t('error'), description: errorMessage, variant: 'destructive' });
-            throw error;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [t, toast]);
-
-    const handleVerifyCode = useCallback(async (code: string): Promise<void> => {
-        if (!auth || !db || !currentUser) throw new Error('Not authenticated or Firebase not initialized');
-
-        try {
-            setIsLoading(true);
-
-            // Get verification code document
-            const codeDoc = await getDoc(doc(db, 'verificationCodes', currentUser.uid));
-
-            if (!codeDoc.exists()) {
-                throw new Error('No verification code found');
-            }
-
-            const codeData = codeDoc.data() as VerificationCode;
-
-            // Check if code has already been verified
-            if (codeData.verified) {
-                throw new Error('Code already used');
-            }
-
-            // Check if code has expired
-            const now = new Date();
-            const expiresAt = codeData.expiresAt instanceof Date
-                ? codeData.expiresAt
-                : codeData.expiresAt.toDate();
-
-            if (now > expiresAt) {
-                throw new Error('Code expired');
-            }
-
-            // Verify the code
-            if (codeData.code !== code.trim()) {
-                throw new Error('Invalid code');
-            }
-
-            // Mark code as verified
-            await updateDoc(doc(db, 'verificationCodes', currentUser.uid), {
-                verified: true
-            });
-
-            // Update user profile to mark email as verified
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                emailVerified: true
-            });
-
-            toast({
-                title: t('verificationSuccess') || 'Email Verified!',
-                description: t('emailVerifiedSuccess') || 'Your email has been successfully verified.'
-            });
-        } catch (error: any) {
-            console.error('Verification error:', error);
-            let errorMessage = t('verificationFailed') || 'Verification failed';
-
-            if (error.message === 'Invalid code') {
-                errorMessage = t('invalidVerificationCode') || 'Invalid verification code';
-            } else if (error.message === 'Code expired') {
-                errorMessage = t('codeExpired') || 'Verification code has expired. Please request a new one.';
-            } else if (error.message === 'Code already used') {
-                errorMessage = t('codeAlreadyUsed') || 'This code has already been used';
-            } else if (error.message === 'No verification code found') {
-                errorMessage = t('noCodeFound') || 'No verification code found. Please sign up again.';
-            }
-
-            toast({ title: t('error'), description: errorMessage, variant: 'destructive' });
-            throw error;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [currentUser, t, toast]);
-
-    const handleResendVerificationCode = useCallback(async (): Promise<void> => {
-        if (!auth || !db || !currentUser) throw new Error('Not authenticated or Firebase not initialized');
-
-        try {
-            setIsLoading(true);
-
-            // Get user profile to get name and email
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (!userDoc.exists()) {
-                throw new Error('User profile not found');
-            }
-
-            const userData = userDoc.data() as StoredUser;
-
-            // Generate new verification code
-            const verificationCode = generateVerificationCode();
-            const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 15);
-
-            // Update verification code in Firestore
-            await setDoc(doc(db, 'verificationCodes', currentUser.uid), {
-                userId: currentUser.uid,
-                code: verificationCode,
-                email: userData.email,
-                createdAt: serverTimestamp(),
-                expiresAt: expiresAt,
-                verified: false
-            });
-
-            // Send new verification code email
-            await sendVerificationCodeEmail(userData.email, userData.name, verificationCode);
-
-            toast({
-                title: t('codeSent') || 'Code Sent',
-                description: t('newCodeSent') || 'A new verification code has been sent to your email.'
-            });
-        } catch (error: any) {
-            console.error('Resend code error:', error);
-            toast({
-                title: t('error'),
-                description: t('resendFailed') || 'Failed to resend verification code',
-                variant: 'destructive'
-            });
-            throw error;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [currentUser, t, toast]);
-
-    const handleResendVerificationByEmail = useCallback(async (email: string): Promise<void> => {
-        if (!auth || !db) throw new Error('Firebase not initialized');
-
-        try {
-            setIsLoading(true);
-
-            // Find user by email
-            const usersQuery = query(collection(db, 'users'), where('email', '==', email));
-            const usersSnapshot = await getDocs(usersQuery);
-
-            if (usersSnapshot.empty) {
-                throw new Error('User not found');
-            }
-
-            const userDoc = usersSnapshot.docs[0];
-            const userData = userDoc.data() as StoredUser;
-
-            // Check if email is already verified
-            if (userData.emailVerified) {
-                toast({
-                    title: t('emailAlreadyVerified') || 'Email Already Verified',
-                    description: t('emailAlreadyVerifiedDesc') || 'Your email is already verified. You can log in now.',
-                });
-                return;
-            }
-
-            // Generate new verification code
-            const verificationCode = generateVerificationCode();
-            const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 15);
-
-            // Update verification code in Firestore
-            await setDoc(doc(db, 'verificationCodes', userDoc.id), {
-                userId: userDoc.id,
-                code: verificationCode,
-                email: userData.email,
-                createdAt: serverTimestamp(),
-                expiresAt: expiresAt,
-                verified: false
-            });
-
-            // Send verification email
-            await sendVerificationCodeEmail(userData.email, userData.name, verificationCode);
-
-            toast({
-                title: t('codeSent') || 'Code Sent',
-                description: t('newCodeSent') || 'A new verification code has been sent to your email.'
-            });
-        } catch (error: any) {
-            console.error('Resend verification error:', error);
-            let errorMessage = t('resendFailed') || 'Failed to resend verification code';
-
-            if (error.message === 'User not found') {
-                errorMessage = t('userNotFound') || 'No account found with this email';
-            }
-
-            toast({
-                title: t('error'),
-                description: errorMessage,
-                variant: 'destructive'
-            });
             throw error;
         } finally {
             setIsLoading(false);
@@ -510,9 +275,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isLoading,
             handleLogin,
             handleSignup,
-            handleVerifyCode,
-            handleResendVerificationCode,
-            handleResendVerificationByEmail,
             handlePasswordReset,
             handleUserInitiatedLogout,
             handleDeleteAccount,
