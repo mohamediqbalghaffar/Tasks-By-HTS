@@ -16,20 +16,15 @@ interface LetterNumberEditorProps {
 export function LetterNumberEditor({ item, onSave, t }: LetterNumberEditorProps) {
     const [open, setOpen] = React.useState(false);
     const [code, setCode] = React.useState(item.letterCode || '');
-    const [number, setNumber] = React.useState(item.letterNumber || '');
 
     React.useEffect(() => {
         if (open) {
             setCode(item.letterCode || '');
-            setNumber(item.letterNumber || '');
         }
-    }, [open, item.letterCode, item.letterNumber]);
+    }, [open, item.letterCode]);
 
     const handleSave = () => {
-        // We save individually as handleSaveField is granular. 
-        // In a real app with batch updates, we'd use a different method.
         if (code !== item.letterCode) onSave(item.id, 'letterCode', code, 'letter');
-        if (number !== item.letterNumber) onSave(item.id, 'letterNumber', number, 'letter');
         setOpen(false);
     };
 
@@ -49,10 +44,6 @@ export function LetterNumberEditor({ item, onSave, t }: LetterNumberEditorProps)
                     <div className="space-y-2">
                         <Label>{t('letterCode') || 'Letter Code'}</Label>
                         <Input value={code} onChange={(e) => setCode(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>{t('letterNumber') || 'Letter Number'}</Label>
-                        <Input value={number} onChange={(e) => setNumber(e.target.value)} />
                     </div>
                 </div>
                 <DialogFooter>

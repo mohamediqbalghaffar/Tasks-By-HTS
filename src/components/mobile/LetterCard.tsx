@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { MoreVertical, CheckCircle2, Circle, FileText, AlertTriangle } from 'lucide-react';
+import { MoreVertical, CheckCircle2, Circle, FileText, AlertTriangle, Copy } from 'lucide-react';
 import { ApprovalLetter } from '@/contexts/LanguageContext';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -30,6 +31,14 @@ export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFns
         if (priority >= 8) return 'bg-red-500/10 text-red-600 border-red-200';
         if (priority >= 5) return 'bg-orange-500/10 text-orange-600 border-orange-200';
         return 'bg-blue-500/10 text-blue-600 border-blue-200';
+    };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast({
+            description: `${label} ${t('copied')}`,
+            duration: 2000,
+        });
     };
 
     return (
@@ -59,17 +68,34 @@ export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFns
                         )}
                     </button>
                     <div className="flex-1 min-w-0 py-0.5">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h3 className={cn(
-                                "font-semibold text-base leading-snug break-words text-foreground",
-                                letter.isDone && "line-through text-muted-foreground"
-                            )}>
-                                {letter.name}
-                            </h3>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <div className="flex items-center gap-1 min-w-0">
+                                <h3 className={cn(
+                                    "font-semibold text-base leading-snug break-words text-foreground",
+                                    letter.isDone && "line-through text-muted-foreground"
+                                )}>
+                                    {letter.name}
+                                </h3>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); copyToClipboard(letter.name, t('letterNameValueLabel')); }}
+                                    className="opacity-50 hover:opacity-100 p-1"
+                                >
+                                    <Copy className="h-3 w-3" />
+                                </button>
+                            </div>
+
                             {letter.letterCode && (
-                                <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground whitespace-nowrap">
-                                    {letter.letterCode}
-                                </span>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground whitespace-nowrap">
+                                        {letter.letterCode}
+                                    </span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); copyToClipboard(letter.letterCode || '', t('letterCode')); }}
+                                        className="opacity-50 hover:opacity-100 p-1"
+                                    >
+                                        <Copy className="h-3 w-3" />
+                                    </button>
+                                </div>
                             )}
                         </div>
                         {letter.sentTo && (

@@ -642,7 +642,14 @@ export const translations: Record<Locale, Record<string, string>> = {
     "sentTo": "نێردراوە بۆ",
     "taskUpdatedSuccess": "ئەرکەکە بە سەرکەوتوویی نوێکرایەوە.",
     "letterUpdatedSuccess": "نووسراوەکە بە سەرکەوتوویی نوێکرایەوە.",
-    "errorUpdatingItem": "هەڵە لە نوێکردنەوەی ئایتم."
+    "errorUpdatingItem": "هەڵە لە نوێکردنەوەی ئایتم.",
+    "editLetterInfo": "دەستکاری زانیاری نووسراو",
+    "letterCode": "کۆدی نووسراو",
+    "letterNameValueLabel": "ناونیشانی نووسراو",
+    "copyText": "کۆپیکردن",
+    "copied": "کۆپیکرا",
+    "saveChanges": "پاراستنی گۆڕانکارییەکان",
+    "cancel": "پاشگەزبوونەوە"
 
 
   },
