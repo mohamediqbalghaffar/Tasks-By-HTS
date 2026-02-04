@@ -95,8 +95,10 @@ export default function DataAnalysisPage() {
         if (completedItems.length > 0) {
             const durations = completedItems.map(item => {
                 const created = (item.createdAt as any)?.toDate ? (item.createdAt as any).toDate() : new Date(item.createdAt);
-                const updated = (item.updatedAt as any)?.toDate ? (item.updatedAt as any).toDate() : new Date(item.updatedAt);
-                return updated.getTime() - created.getTime();
+                const completed = item.completedAt
+                    ? ((item.completedAt as any)?.toDate ? (item.completedAt as any).toDate() : new Date(item.completedAt))
+                    : ((item.updatedAt as any)?.toDate ? (item.updatedAt as any).toDate() : new Date(item.updatedAt));
+                return completed.getTime() - created.getTime();
             }).sort((a, b) => a - b);
 
             const mid = Math.floor(durations.length / 2);
@@ -146,8 +148,10 @@ export default function DataAnalysisPage() {
 
         completedItems.forEach(item => {
             const created = (item.createdAt as any)?.toDate ? (item.createdAt as any).toDate() : new Date(item.createdAt);
-            const updated = (item.updatedAt as any)?.toDate ? (item.updatedAt as any).toDate() : new Date(item.updatedAt);
-            const durationMs = updated.getTime() - created.getTime();
+            const completed = item.completedAt
+                ? ((item.completedAt as any)?.toDate ? (item.completedAt as any).toDate() : new Date(item.completedAt))
+                : ((item.updatedAt as any)?.toDate ? (item.updatedAt as any).toDate() : new Date(item.updatedAt));
+            const durationMs = completed.getTime() - created.getTime();
             const durationDays = durationMs / (1000 * 60 * 60 * 24);
 
             if (durationDays < 1) timeBuckets.lessThanOneDay++;
