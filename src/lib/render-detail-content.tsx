@@ -172,7 +172,7 @@ export const renderDetailContent = (
                                             <Edit className="h-3 w-3" />
                                         </Button>
                                     </div>
-                                    <p className="text-foreground">{t((item as ApprovalLetter).sentTo) || (item as ApprovalLetter).sentTo || '-'}</p>
+                                    <p className="text-foreground">{t((item as ApprovalLetter).sentTo || '') || (item as ApprovalLetter).sentTo || '-'}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
@@ -184,7 +184,7 @@ export const renderDetailContent = (
                                             <Edit className="h-3 w-3" />
                                         </Button>
                                     </div>
-                                    <p className="text-foreground">{t((item as ApprovalLetter).letterType) || (item as ApprovalLetter).letterType || '-'}</p>
+                                    <p className="text-foreground">{t((item as ApprovalLetter).letterType || '') || (item as ApprovalLetter).letterType || '-'}</p>
                                 </div>
                             </div>
                         </>
