@@ -655,7 +655,25 @@ export const translations: Record<Locale, Record<string, string>> = {
     "copiedToClipboard": "کۆپیکرا بۆ ڕاگیراو",
     "itemName": "ناوی ئایتم",
 
-
+    // Data Analysis Enhancements
+    "totalItems": "کۆی گشتی",
+    "totalItemsDesc": "کۆی گشتی ئایتمەکان (چالاک + تەواوکراو)",
+    "dateRangeFilter": "فلتەری بەرواری",
+    "fromDate": "لە بەرواری",
+    "toDate": "بۆ بەرواری",
+    "last7Days": "٧ ڕۆژی ڕابردوو",
+    "last30Days": "٣٠ ڕۆژی ڕابردوو",
+    "last3Months": "٣ مانگی ڕابردوو",
+    "allTime": "هەموو کات",
+    "clearFilter": "سڕینەوەی فلتەر",
+    "expandDetails": "زیاتر",
+    "collapseDetails": "کەمتر",
+    "exportData": "هەناردەکردنی داتا",
+    "showDetails": "پیشاندانی وردەکاری",
+    "hideDetails": "شاردنەوەی وردەکاری",
+    "filterByDate": "فلتەرکردن بەپێی بەروار",
+    "applyDateFilter": "جێبەجێکردنی فلتەر",
+    "noDataInRange": "هیچ داتایەک نییە لەم ماوەیەدا",
 
   },
 };
