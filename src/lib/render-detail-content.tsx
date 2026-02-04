@@ -17,7 +17,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 import { SharedWithList } from '@/components/shared-with-list';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users } from 'lucide-react';
+import { Users, Copy } from 'lucide-react';
+
+import { LetterNumberEditor } from '@/components/LetterNumberEditor';
+import { toast } from '@/hooks/use-toast';
 
 export interface DetailActions {
     handlePriorityChange: (id: string, type: 'task' | 'letter', priority: number) => Promise<void>;
@@ -26,6 +29,8 @@ export interface DetailActions {
     handleOpenEditField: (item: Task | ApprovalLetter, field: any) => void;
     handleDelete: (id: string, type: 'task' | 'letter') => Promise<void>;
     calculateDefaultReminder: () => Date;
+    handleDateChange: (id: string, type: 'task' | 'letter', date: Date) => Promise<void>;
+    handleSaveField: (id: string, field: any, value: any, type: 'task' | 'letter', config?: any) => Promise<void>;
 }
 
 export const renderDetailContent = (
@@ -34,7 +39,7 @@ export const renderDetailContent = (
     t: (key: string, params?: any) => string,
     getDateFnsLocale: () => any
 ) => {
-    const { handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder } = actions;
+    const { handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder, handleDateChange, handleSaveField } = actions;
     const isTask = 'taskNumber' in item;
     const itemType = isTask ? 'task' : 'letter';
 
@@ -44,6 +49,14 @@ export const renderDetailContent = (
     const resultConfig = (item as any).resultConfig || { direction: 'rtl', fontSize: '0.875rem' };
 
     const priorityOptions: { value: number, labelKey: string }[] = Array.from({ length: 10 }, (_, i) => ({ value: i + 1, labelKey: `priority${i + 1}` }));
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({
+            description: t('copied'),
+            duration: 2000,
+        });
+    };
 
     return (
         <div className="space-y-6" dir="rtl">
@@ -121,9 +134,30 @@ export const renderDetailContent = (
 
                     <div className="flex items-start gap-4">
                         <Sigma className="h-5 w-5 mt-1 text-primary shrink-0" />
-                        <div>
+                        <div className="flex-1">
                             <Label className="text-sm text-muted-foreground">{t(isTask ? 'taskNumberValueLabel' : 'letterNumberValueLabel')}</Label>
-                            <p className="font-mono text-lg text-foreground">{isTask ? (item as Task).taskNumber : `${(item as ApprovalLetter).letterCode} / ${(item as ApprovalLetter).letterNumber}`}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                                <p className="font-mono text-lg text-foreground">
+                                    {isTask ? (item as Task).taskNumber : `${(item as ApprovalLetter).letterCode} / ${(item as ApprovalLetter).letterNumber}`}
+                                </p>
+                                {!isTask && (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={() => copyToClipboard(`${(item as ApprovalLetter).letterCode} / ${(item as ApprovalLetter).letterNumber}`)}
+                                        >
+                                            <Copy className="h-3 w-3" />
+                                        </Button>
+                                        <LetterNumberEditor
+                                            item={item as ApprovalLetter}
+                                            onSave={handleSaveField}
+                                            t={t}
+                                        />
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -161,10 +195,19 @@ export const renderDetailContent = (
                         <CalendarDays className="h-5 w-5 mt-1 text-primary shrink-0" />
                         <div className="w-full">
                             <Label className="text-sm text-muted-foreground">{t('startTimeLabel')}</Label>
-                            <div className="mt-1 flex items-center gap-2 text-foreground rounded-md border border-input bg-background/50 px-3 py-2">
-                                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                <span>{item.startTime ? format(item.startTime, 'PPP p', { locale: getDateFnsLocale() }) : ''}</span>
-                            </div>
+                            {/* Editable Start Time */}
+                            <DateTimePicker
+                                date={item.startTime}
+                                onSave={(newDate) => {
+                                    if (newDate) handleDateChange(item.id, itemType, newDate);
+                                }}
+                                triggerButton={
+                                    <Button variant={"outline"} className="w-full justify-start text-left font-normal mt-1">
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {item.startTime ? format(item.startTime, 'PPP p', { locale: getDateFnsLocale() }) : <span>{t('pickADate')}</span>}
+                                    </Button>
+                                }
+                            />
                         </div>
                     </div>
 

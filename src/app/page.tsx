@@ -58,7 +58,9 @@ export default function Home() {
         handlePriorityChange,
         handleReminderChange,
         handleUrgencyChange,
-        calculateDefaultReminder
+        calculateDefaultReminder,
+        handleDateChange,
+        handleSaveField
     } = useTask();
 
     const {
@@ -95,8 +97,10 @@ export default function Home() {
         handleUrgencyChange,
         handleOpenEditField,
         handleDelete,
-        calculateDefaultReminder
-    }), [handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder]);
+        calculateDefaultReminder,
+        handleDateChange,
+        handleSaveField
+    }), [handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder, handleDateChange, handleSaveField]);
 
     const router = useRouter();
     const [selectedItem, setSelectedItem] = useState<Task | ApprovalLetter | null>(null);
