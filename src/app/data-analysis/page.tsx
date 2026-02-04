@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -7,36 +6,30 @@ import { useTask, Task, ApprovalLetter } from '@/contexts/TaskContext';
 import { useUI } from '@/contexts/UIContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { motion } from 'framer-motion';
 import {
     ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import LoadingAnimation from '@/components/ui/loading-animation';
-import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { ListChecks, CheckCircle, AlertTriangle, BarChartHorizontal, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { ListChecks, CheckCircle, AlertTriangle, BarChartHorizontal } from 'lucide-react';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { subDays, subMonths, isWithinInterval } from 'date-fns';
 
 const CustomDot = (props: any) => {
     const { cx, cy, payload } = props;
     return (
-        <motion.g
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: Math.random() * 0.4 }}
-        >
-            <circle
-                cx={cx}
-                cy={cy}
-                r={payload.urgency > 5 ? 8 : 6}
-                fill="hsl(var(--primary))"
-                stroke="hsl(var(--primary-foreground))"
-                strokeWidth={1.5}
-                style={{ filter: `drop-shadow(0 2px 4px hsl(var(--primary) / 0.5))` }}
-            />
-        </motion.g>
+        <circle
+            cx={cx}
+            cy={cy}
+            r={payload.urgency > 5 ? 8 : 6}
+            fill="hsl(var(--primary))"
+            stroke="hsl(var(--primary-foreground))"
+            strokeWidth={1.5}
+            style={{ filter: `drop-shadow(0 2px 4px hsl(var(--primary) / 0.5))` }}
+        />
     );
 };
 
@@ -63,6 +56,51 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
     );
 };
 
+interface KPIDetailModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    description: string;
+    value: number | string;
+    items?: (Task | ApprovalLetter)[];
+    t: (key: string) => string;
+}
+
+const KPIDetailModal: React.FC<KPIDetailModalProps> = ({ isOpen, onClose, title, description, value, items, t }) => {
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl">{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                    <div className="text-4xl font-bold text-primary">{value}</div>
+                    {items && items.length > 0 && (
+                        <div className="space-y-2">
+                            <h3 className="font-semibold text-lg">{t('items')}:</h3>
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                                {items.map((item, index) => (
+                                    <Card key={item.id} className="p-3">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <p className="font-medium">{item.name}</p>
+                                                <p className="text-sm text-muted-foreground">{item.detail}</p>
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                                {item.createdAt && new Date(item.createdAt).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 export default function DataAnalysisPage() {
     const { t, getDateFnsLocale } = useLanguage();
@@ -73,6 +111,8 @@ export default function DataAnalysisPage() {
         isInitialDataLoading,
         tasks,
         approvalLetters,
+        expiredTasksList,
+        expiredApprovalLettersList,
     } = useTask();
 
     const {
@@ -84,10 +124,22 @@ export default function DataAnalysisPage() {
     const [fromDate, setFromDate] = React.useState<Date | null>(null);
     const [toDate, setToDate] = React.useState<Date | null>(null);
 
-    // Expandable sections state
-    const [expandedSection, setExpandedSection] = React.useState<string | null>(null);
+    // KPI Modal state
+    const [kpiModal, setKpiModal] = React.useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        value: number | string;
+        items?: (Task | ApprovalLetter)[];
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        value: 0,
+        items: []
+    });
 
-    const handlePresetSelect = (preset: 'last7Days' | 'last30Days' | 'last3Months' | 'allTime') => {
+    const handlePresetSelect = React.useCallback((preset: 'last7Days' | 'last30Days' | 'last3Months' | 'allTime') => {
         const now = new Date();
         switch (preset) {
             case 'last7Days':
@@ -107,37 +159,46 @@ export default function DataAnalysisPage() {
                 setToDate(null);
                 break;
         }
-    };
+    }, []);
 
-    const handleClearFilter = () => {
+    const handleClearFilter = React.useCallback(() => {
         setFromDate(null);
         setToDate(null);
-    };
+    }, []);
 
-    const toggleSection = (sectionId: string) => {
-        setExpandedSection(expandedSection === sectionId ? null : sectionId);
-    };
+    const openKPIModal = React.useCallback((title: string, description: string, value: number | string, items?: (Task | ApprovalLetter)[]) => {
+        setKpiModal({ isOpen: true, title, description, value, items });
+    }, []);
+
+    const closeKPIModal = React.useCallback(() => {
+        setKpiModal(prev => ({ ...prev, isOpen: false }));
+    }, []);
 
     const { kpiData, matrixData, statusData, priorityData, filteredItems } = React.useMemo(() => {
         const relevantItems = showTasks ? tasks : approvalLetters;
+        const relevantExpired = showTasks ? expiredTasksList : expiredApprovalLettersList;
+
+        // ALL items including expired and deleted
+        const allItems = [...relevantItems, ...relevantExpired];
 
         // Apply date filter
-        let filtered = relevantItems;
+        let filtered = allItems;
         if (fromDate && toDate) {
-            filtered = relevantItems.filter(item => {
+            filtered = allItems.filter(item => {
                 const itemDate = (item.createdAt as any)?.toDate ? (item.createdAt as any).toDate() : new Date(item.createdAt);
                 return isWithinInterval(itemDate, { start: fromDate, end: toDate });
             });
         }
 
-        const activeItems = filtered.filter(item => !item.isDone);
+        const activeItems = filtered.filter(item => !item.isDone && item.status !== 'expired');
         const completedItems = filtered.filter(item => item.isDone);
+        const urgentItems = activeItems.filter(item => item.isUrgent);
 
         // --- KPI DATA ---
         const totalActive = activeItems.length;
         const totalCompleted = completedItems.length;
-        const totalItems = filtered.length;
-        const urgentCount = activeItems.filter(item => item.isUrgent).length;
+        const totalItems = filtered.length; // ALL items (active + completed + expired)
+        const urgentCount = urgentItems.length;
 
         // Median Time Calculation
         let medianTime = 0;
@@ -173,7 +234,11 @@ export default function DataAnalysisPage() {
             totalCompleted,
             totalItems,
             urgentCount,
-            avgPriority: medianTimeLabel
+            avgPriority: medianTimeLabel,
+            activeItems,
+            completedItems,
+            urgentItems,
+            allItems: filtered
         };
 
         // --- EISENHOWER MATRIX DATA ---
@@ -220,15 +285,15 @@ export default function DataAnalysisPage() {
         ].filter(item => item.value > 0);
 
         return { kpiData: kpi, matrixData: matrix, statusData: status, priorityData: priority, filteredItems: filtered };
-    }, [tasks, approvalLetters, showTasks, t, fromDate, toDate]);
+    }, [tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, showTasks, t, fromDate, toDate]);
 
-    const handleScatterClick = (props: any) => {
+    const handleScatterClick = React.useCallback((props: any) => {
         if (props && props.id) {
             router.push(`/item/${props.id}`);
         }
-    };
+    }, [router]);
 
-    const CustomTooltip = ({ active, payload }: any) => {
+    const CustomTooltip = React.useCallback(({ active, payload }: any) => {
         if (active && payload && payload.length) {
             const data = payload[0].payload;
             return (
@@ -238,9 +303,9 @@ export default function DataAnalysisPage() {
             );
         }
         return null;
-    };
+    }, []);
 
-    const DataChartTooltip = ({ active, payload, label }: any) => {
+    const DataChartTooltip = React.useCallback(({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             const data = payload[0];
             const name = data.name || label;
@@ -252,9 +317,9 @@ export default function DataAnalysisPage() {
             );
         }
         return null;
-    };
+    }, [t]);
 
-    const COLORS = [
+    const COLORS = React.useMemo(() => [
         "hsl(var(--primary))",
         "hsl(var(--chart-2))",
         "hsl(var(--chart-3))",
@@ -263,7 +328,7 @@ export default function DataAnalysisPage() {
         "hsl(var(--chart-5))",
         "hsl(var(--accent))",
         "hsl(var(--secondary))",
-    ];
+    ], []);
 
     if (!isMounted || isInitialDataLoading) {
         return <LoadingAnimation text={t('loadingData')} />;
@@ -313,9 +378,12 @@ export default function DataAnalysisPage() {
                 animate="visible"
                 variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
             >
-                {/* Total Items KPI */}
+                {/* Total Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card
+                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        onClick={() => openKPIModal(t('totalItems'), t('totalItemsDesc'), kpiData.totalItems, kpiData.allItems)}
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{t('totalItems')}</CardTitle>
                             <BarChartHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -327,8 +395,12 @@ export default function DataAnalysisPage() {
                     </Card>
                 </motion.div>
 
+                {/* Active Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card
+                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        onClick={() => openKPIModal(t('totalActiveItems'), t('currentlyActive', { type: showTasks ? t('tasksTab') : t('lettersTab') }), kpiData.totalActive, kpiData.activeItems)}
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{t('totalActiveItems')}</CardTitle>
                             <ListChecks className="h-4 w-4 text-muted-foreground" />
@@ -339,8 +411,13 @@ export default function DataAnalysisPage() {
                         </CardContent>
                     </Card>
                 </motion.div>
+
+                {/* Completed Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card
+                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        onClick={() => openKPIModal(t('totalCompletedItems'), t('itemsCompleted'), kpiData.totalCompleted, kpiData.completedItems)}
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{t('totalCompletedItems')}</CardTitle>
                             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -351,8 +428,13 @@ export default function DataAnalysisPage() {
                         </CardContent>
                     </Card>
                 </motion.div>
+
+                {/* Urgent Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card
+                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        onClick={() => openKPIModal(t('urgentItems'), t('requireImmediateAttention'), kpiData.urgentCount, kpiData.urgentItems)}
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{t('urgentItems')}</CardTitle>
                             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
@@ -363,8 +445,13 @@ export default function DataAnalysisPage() {
                         </CardContent>
                     </Card>
                 </motion.div>
+
+                {/* Median Time KPI - Clickable */}
                 <motion.div variants={cardVariants}>
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card
+                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        onClick={() => openKPIModal(t('medianTimeToComplete'), t('medianCompletionTime'), kpiData.avgPriority, kpiData.completedItems)}
+                    >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{t('medianTimeToComplete')}</CardTitle>
                             <BarChartHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -378,87 +465,41 @@ export default function DataAnalysisPage() {
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Eisenhower Matrix - Expandable */}
+                {/* Eisenhower Matrix - Fixed Size */}
                 <motion.div custom={0} initial="hidden" animate="visible" variants={cardVariants} className="lg:col-span-2">
                     <Card className="hover:shadow-lg transition-shadow">
-                        <CardHeader
-                            className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-lg"
-                            onClick={() => toggleSection('matrix')}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>{t('eisenhowerMatrix')}</CardTitle>
-                                    <CardDescription>{t('matrixScheduleTitle')} vs. {t('matrixDelegateTitle')}</CardDescription>
-                                </div>
-                                {expandedSection === 'matrix' ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                            </div>
+                        <CardHeader>
+                            <CardTitle>{t('eisenhowerMatrix')}</CardTitle>
+                            <CardDescription>{t('matrixScheduleTitle')} vs. {t('matrixDelegateTitle')}</CardDescription>
                         </CardHeader>
-                        <AnimatePresence>
-                            {expandedSection === 'matrix' && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <CardContent className="h-[600px] relative">
-                                        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 -z-10">
-                                            <div className="quadrant-schedule flex items-start justify-start p-4 rounded-tl-lg"><span className="quadrant-label">{t('matrixScheduleTitle')}</span></div>
-                                            <div className="quadrant-do flex items-start justify-end p-4 rounded-tr-lg text-right"><span className="quadrant-label">{t('matrixDoTitle')}</span></div>
-                                            <div className="quadrant-eliminate flex items-end justify-start p-4 rounded-bl-lg"><span className="quadrant-label">{t('matrixEliminateTitle')}</span></div>
-                                            <div className="quadrant-delegate flex items-end justify-end p-4 rounded-br-lg text-right"><span className="quadrant-label">{t('matrixDelegateTitle')}</span></div>
-                                        </div>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" />
-                                                <XAxis type="number" dataKey="urgency" name={t('matrixDelegateTitle')} domain={[0, 10]} tickCount={6} stroke="hsl(var(--foreground) / 0.5)" tick={{ fontSize: 12 }} />
-                                                <YAxis type="number" dataKey="importance" name={t('matrixScheduleTitle')} domain={[0, 10]} tickCount={6} stroke="hsl(var(--foreground) / 0.5)" tick={{ fontSize: 12 }} />
-                                                <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
-                                                <Scatter data={matrixData} shape={<CustomDot />} onClick={handleScatterClick} />
-                                            </ScatterChart>
-                                        </ResponsiveContainer>
-                                    </CardContent>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                        {expandedSection !== 'matrix' && (
-                            <CardContent className="h-[400px] relative">
-                                <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 -z-10">
-                                    <div className="quadrant-schedule flex items-start justify-start p-4 rounded-tl-lg"><span className="quadrant-label">{t('matrixScheduleTitle')}</span></div>
-                                    <div className="quadrant-do flex items-start justify-end p-4 rounded-tr-lg text-right"><span className="quadrant-label">{t('matrixDoTitle')}</span></div>
-                                    <div className="quadrant-eliminate flex items-end justify-start p-4 rounded-bl-lg"><span className="quadrant-label">{t('matrixEliminateTitle')}</span></div>
-                                    <div className="quadrant-delegate flex items-end justify-end p-4 rounded-br-lg text-right"><span className="quadrant-label">{t('matrixDelegateTitle')}</span></div>
-                                </div>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" />
-                                        <XAxis type="number" dataKey="urgency" name={t('matrixDelegateTitle')} domain={[0, 10]} tickCount={6} stroke="hsl(var(--foreground) / 0.5)" tick={{ fontSize: 12 }} />
-                                        <YAxis type="number" dataKey="importance" name={t('matrixScheduleTitle')} domain={[0, 10]} tickCount={6} stroke="hsl(var(--foreground) / 0.5)" tick={{ fontSize: 12 }} />
-                                        <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
-                                        <Scatter data={matrixData} shape={<CustomDot />} onClick={handleScatterClick} />
-                                    </ScatterChart>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        )}
+                        <CardContent className="h-[500px] relative">
+                            <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 -z-10">
+                                <div className="quadrant-schedule flex items-start justify-start p-4 rounded-tl-lg"><span className="quadrant-label">{t('matrixScheduleTitle')}</span></div>
+                                <div className="quadrant-do flex items-start justify-end p-4 rounded-tr-lg text-right"><span className="quadrant-label">{t('matrixDoTitle')}</span></div>
+                                <div className="quadrant-eliminate flex items-end justify-start p-4 rounded-bl-lg"><span className="quadrant-label">{t('matrixEliminateTitle')}</span></div>
+                                <div className="quadrant-delegate flex items-end justify-end p-4 rounded-br-lg text-right"><span className="quadrant-label">{t('matrixDelegateTitle')}</span></div>
+                            </div>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" />
+                                    <XAxis type="number" dataKey="urgency" name={t('matrixDelegateTitle')} domain={[0, 10]} tickCount={6} stroke="hsl(var(--foreground) / 0.5)" tick={{ fontSize: 12 }} />
+                                    <YAxis type="number" dataKey="importance" name={t('matrixScheduleTitle')} domain={[0, 10]} tickCount={6} stroke="hsl(var(--foreground) / 0.5)" tick={{ fontSize: 12 }} />
+                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
+                                    <Scatter data={matrixData} shape={<CustomDot />} onClick={handleScatterClick} />
+                                </ScatterChart>
+                            </ResponsiveContainer>
+                        </CardContent>
                     </Card>
                 </motion.div>
 
-                {/* Status Overview - Expandable */}
+                {/* Status Overview - Fixed Size */}
                 <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants}>
                     <Card className="hover:shadow-lg transition-shadow">
-                        <CardHeader
-                            className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-lg"
-                            onClick={() => toggleSection('status')}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>{t('itemStatusOverview')}</CardTitle>
-                                    <CardDescription>{showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
-                                </div>
-                                {expandedSection === 'status' ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                            </div>
+                        <CardHeader>
+                            <CardTitle>{t('itemStatusOverview')}</CardTitle>
+                            <CardDescription>{showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
                         </CardHeader>
-                        <CardContent className={expandedSection === 'status' ? "h-[500px]" : "h-[300px]"}>
+                        <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={statusData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
@@ -472,22 +513,14 @@ export default function DataAnalysisPage() {
                     </Card>
                 </motion.div>
 
-                {/* Time Distribution - Expandable */}
+                {/* Time Distribution - Fixed Size */}
                 <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants}>
                     <Card className="hover:shadow-lg transition-shadow">
-                        <CardHeader
-                            className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-lg"
-                            onClick={() => toggleSection('distribution')}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>{t('timeToCompleteDistribution')}</CardTitle>
-                                    <CardDescription>{t('activeCount')} - {showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
-                                </div>
-                                {expandedSection === 'distribution' ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                            </div>
+                        <CardHeader>
+                            <CardTitle>{t('timeToCompleteDistribution')}</CardTitle>
+                            <CardDescription>{t('activeCount')} - {showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
                         </CardHeader>
-                        <CardContent className={expandedSection === 'distribution' ? "h-[500px]" : "h-[300px]"}>
+                        <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -496,8 +529,8 @@ export default function DataAnalysisPage() {
                                         cy="50%"
                                         labelLine={false}
                                         label={renderCustomizedLabel}
-                                        outerRadius={expandedSection === 'distribution' ? 150 : 100}
-                                        innerRadius={expandedSection === 'distribution' ? 90 : 60}
+                                        outerRadius={120}
+                                        innerRadius={70}
                                         paddingAngle={5}
                                         fill="#8884d8"
                                         dataKey="value"
@@ -517,6 +550,17 @@ export default function DataAnalysisPage() {
                     </Card>
                 </motion.div>
             </div>
+
+            {/* KPI Detail Modal */}
+            <KPIDetailModal
+                isOpen={kpiModal.isOpen}
+                onClose={closeKPIModal}
+                title={kpiModal.title}
+                description={kpiModal.description}
+                value={kpiModal.value}
+                items={kpiModal.items}
+                t={t}
+            />
         </div>
     );
 }

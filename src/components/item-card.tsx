@@ -137,9 +137,17 @@ export const ShareDialog = ({ item, onShare, t }: { item: Task | ApprovalLetter,
     );
 };
 
-
-
-export const ItemCard = React.memo(({ item, isSelected, onCardClick, toggleIsDone, handleDelete, t, getDateFnsLocale, shareItem }: ItemCardProps) => {
+// Define the component first
+const ItemCardComponent: React.FC<ItemCardProps> = ({
+    item,
+    isSelected,
+    onCardClick,
+    toggleIsDone,
+    handleDelete,
+    t,
+    getDateFnsLocale,
+    shareItem
+}) => {
     const isTask = 'taskNumber' in item;
     const [showCompletionDialog, setShowCompletionDialog] = useState(false);
     const { toast } = useToast();
@@ -341,5 +349,21 @@ export const ItemCard = React.memo(({ item, isSelected, onCardClick, toggleIsDon
             )}
         </Card>
     );
+};
+
+// Memoized ItemCard to prevent unnecessary re-renders
+export const ItemCard = React.memo<ItemCardProps>(ItemCardComponent, (prevProps, nextProps) => {
+    // Custom comparison function - only re-render if these props change
+    return (
+        prevProps.item.id === nextProps.item.id &&
+        prevProps.item.isDone === nextProps.item.isDone &&
+        prevProps.item.isUrgent === nextProps.item.isUrgent &&
+        prevProps.item.priority === nextProps.item.priority &&
+        prevProps.item.name === nextProps.item.name &&
+        prevProps.item.detail === nextProps.item.detail &&
+        prevProps.item.updatedAt.getTime() === nextProps.item.updatedAt.getTime() &&
+        prevProps.isSelected === nextProps.isSelected
+    );
 });
+
 ItemCard.displayName = 'ItemCard';

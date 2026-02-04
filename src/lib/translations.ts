@@ -674,6 +674,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "filterByDate": "فلتەرکردن بەپێی بەروار",
     "applyDateFilter": "جێبەجێکردنی فلتەر",
     "noDataInRange": "هیچ داتایەک نییە لەم ماوەیەدا",
+    "items": "ئایتمەکان",
 
   },
 };
