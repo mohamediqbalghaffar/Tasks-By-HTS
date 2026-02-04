@@ -247,7 +247,7 @@ export const renderDetailContent = (
                             <Hourglass className="h-5 w-5 mt-1 text-primary shrink-0" />
                             <div>
                                 <Label className="text-sm text-muted-foreground">{t('timeToComplete')}</Label>
-                                <p className="text-foreground">{formatDistanceStrict(item.updatedAt, item.createdAt, { locale: getDateFnsLocale() })}</p>
+                                <p className="text-foreground">{formatDistanceStrict(item.completedAt || item.updatedAt, item.createdAt, { locale: getDateFnsLocale() })}</p>
                             </div>
                         </div>
                     )}
