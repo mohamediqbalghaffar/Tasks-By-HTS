@@ -41,10 +41,23 @@ export default function MutualPage() {
     type SentItem = Task | ApprovalLetter;
 
     const { t, getDateFnsLocale } = useLanguage();
-    const { receivedItems, tasks, approvalLetters, toggleIsDone, handleDelete: contextHandleDelete, shareItem, markAsSeen, updateReceivedItem, deleteReceivedItem } = useTask();
+    const {
+        receivedItems,
+        tasks,
+        approvalLetters,
+        expiredTasksList,
+        expiredApprovalLettersList,
+        toggleIsDone,
+        handleDelete: contextHandleDelete,
+        shareItem,
+        markAsSeen,
+        updateReceivedItem,
+        deleteReceivedItem
+    } = useTask();
     const { handleOpenEditField } = useUI();
     const [selectedItem, setSelectedItem] = useState<MutualItem | SentItem | null>(null);
     const [activeTab, setActiveTab] = useState('received');
+    const [viewType, setViewType] = useState<'task' | 'letter'>('task');
     const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
 
     // Map received items to Task | ApprovalLetter for ItemCard
@@ -70,18 +83,34 @@ export default function MutualPage() {
         });
     }, [receivedItems]);
 
+    // Filter received items based on viewType
+    const filteredReceivedItems = useMemo(() => {
+        return mappedItems.filter(item => {
+            if (viewType === 'task') return 'taskNumber' in item;
+            return 'letterNumber' in item;
+        });
+    }, [mappedItems, viewType]);
 
-    // Sent Items Logic
+    // Sent Items Logic - Include ACTIVE and EXPIRED items
     const sentItems = useMemo(() => {
-        const sharedTasks = tasks.filter(t => t.sharedCount && t.sharedCount > 0);
-        const sharedLetters = approvalLetters.filter(l => l.sharedCount && l.sharedCount > 0);
-        return [...sharedTasks, ...sharedLetters].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    }, [tasks, approvalLetters]);
+        const allTasks = [...tasks, ...expiredTasksList];
+        const allLetters = [...approvalLetters, ...expiredApprovalLettersList];
 
-    // Group items by sender
+        const sharedTasks = allTasks.filter(t => t.sharedCount && t.sharedCount > 0);
+        const sharedLetters = allLetters.filter(l => l.sharedCount && l.sharedCount > 0);
+
+        // Filter by viewType
+        if (viewType === 'task') {
+            return sharedTasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        } else {
+            return sharedLetters.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        }
+    }, [tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, viewType]);
+
+    // Group items by sender (using filtered received items)
     const groupedItems = useMemo(() => {
         const groups: Record<string, MutualItem[]> = {};
-        mappedItems.forEach(item => {
+        filteredReceivedItems.forEach(item => {
             const senderKey = item._receivedItem.senderUid || 'unknown';
             if (!groups[senderKey]) {
                 groups[senderKey] = [];
@@ -89,7 +118,7 @@ export default function MutualPage() {
             groups[senderKey].push(item);
         });
         return groups;
-    }, [mappedItems]);
+    }, [filteredReceivedItems]);
 
     const handleCardClick = (item: Task | ApprovalLetter) => {
         setSelectedItem(item as MutualItem);
@@ -125,6 +154,27 @@ export default function MutualPage() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                     {t('mutualItems')}
                 </h1>
+            </div>
+
+            <div className="flex justify-center mb-6">
+                <div className="bg-muted p-1 rounded-lg inline-flex shadow-sm">
+                    <Button
+                        variant={viewType === 'task' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewType('task')}
+                        className="w-24 font-medium transition-all"
+                    >
+                        {t('tasks') || 'Tasks'}
+                    </Button>
+                    <Button
+                        variant={viewType === 'letter' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewType('letter')}
+                        className="w-24 font-medium transition-all"
+                    >
+                        {t('letters') || 'Letters'}
+                    </Button>
+                </div>
             </div>
 
             <Tabs defaultValue="received" value={activeTab} onValueChange={setActiveTab} className="flex-grow flex flex-col min-h-0">
@@ -177,7 +227,7 @@ export default function MutualPage() {
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-60">
                                     <Inbox className="w-16 h-16 mb-4 opacity-50" />
-                                    <p className="text-lg">{t('noMutualItems') || "هیچ ئەرکێکی هاوبەش نەدۆزرایەوە"}</p>
+                                    <p className="text-lg">{t('noMutualItems') || "No mutual items found"}</p>
                                 </div>
                             )}
                         </div>
@@ -217,17 +267,17 @@ export default function MutualPage() {
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-60">
                                     <Send className="w-16 h-16 mb-4 opacity-50" />
-                                    <p className="text-lg">{t('noSentItems') || "هیچ ئەرکێکت هاوبەشنەکردووە"}</p>
+                                    <p className="text-lg">{t('noSentItems') || "No sent items found"}</p>
                                 </div>
                             )}
                         </div>
                     </ScrollArea>
                 </TabsContent>
             </Tabs>
-        </div>
+        </div >
     );
 
-    // Actions for detail view (some might be disabled or read-only for shared items)
+    // Actions for detail view
     const actions = {
         handlePriorityChange: async (id: string, type: 'task' | 'letter', priority: number) => {
             await updateReceivedItem(id, 'priority', priority);
@@ -235,15 +285,20 @@ export default function MutualPage() {
         handleReminderChange: async (id: string, type: 'task' | 'letter', date: Date | null) => {
             await updateReceivedItem(id, 'reminder', date);
         },
+        handleDateChange: async (id: string, type: 'task' | 'letter', date: Date | null) => {
+            // Mapping for completeness, though detail view typically uses handleReminderChange or other specific handlers
+            // If this is for "Due Date" or "Start Date", we might need specific logic.
+            // Usually renderDetailContent uses this for generic date fields?
+            // Since we don't have a distinct 'date' field in generic usage, assume reminder or ignore.
+            await updateReceivedItem(id, 'reminder', date);
+        },
         handleUrgencyChange: async (item: Task | ApprovalLetter) => {
             await updateReceivedItem(item.id, 'isUrgent', !item.isUrgent);
         },
+        handleSaveField: async (id: string, field: string, value: any, config?: any) => {
+            await updateReceivedItem(id, field, value, config);
+        },
         handleOpenEditField: (item: Task | ApprovalLetter, field: any) => {
-            // This needs to interact with the UI context to open the editor.
-            // But since handleSaveField in global context saves to 'tasks'/'approvalLetters',
-            // we probably need a way to support editing Shared Items.
-            // For now, let's keep it read-only or basic toggles.
-            // If user really wants to edit text fields, we need a specialized SharedItemEditor.
             handleOpenEditField(item, field);
         },
         handleDelete: async (id: string, type: 'task' | 'letter') => {
