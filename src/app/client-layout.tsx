@@ -326,6 +326,8 @@ const EditDialog = () => {
                         {isEditingField?.field === 'detail' && t(isEditingField?.item && 'taskNumber' in isEditingField.item ? 'taskDetailLabel' : 'letterDetailLabel')}
                         {isEditingField?.field === 'furtherDetails' && t('furtherDetailsValueLabel')}
                         {isEditingField?.field === 'result' && t('resultIfDoneLabel')}
+                        {isEditingField?.field === 'letterType' && t('letterTypeLabel')}
+                        {isEditingField?.field === 'sentTo' && t('sentToLabel')}
                     </DialogTitle>
                     <DialogDescription>
                         {isEditingField?.item.name}
@@ -334,29 +336,34 @@ const EditDialog = () => {
                 <div className="py-4 space-y-2">
                     <div className="flex items-center gap-2 p-1 rounded-md border bg-muted flex-row-reverse">
                         <TooltipProvider>
-                            <Tooltip><TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setEditingFieldConfig(c => ({ ...c, direction: 'ltr' }))}><AlignLeft className="h-4 w-4" /></Button>
-                            </TooltipTrigger><TooltipContent><p>LTR</p></TooltipContent></Tooltip>
-                            <Tooltip><TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setEditingFieldConfig(c => ({ ...c, direction: 'rtl' }))}><AlignRight className="h-4 w-4" /></Button>
-                            </TooltipTrigger><TooltipContent><p>RTL</p></TooltipContent></Tooltip>
-                            <Select value={editingFieldConfig?.fontSize} onValueChange={(val) => setEditingFieldConfig(c => ({ ...c, fontSize: val }))}>
-                                <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="0.75rem">{t('fontSmall')}</SelectItem>
-                                    <SelectItem value="0.875rem">{t('fontNormal')}</SelectItem>
-                                    <SelectItem value="1rem">{t('fontMedium')}</SelectItem>
-                                    <SelectItem value="1.125rem">{t('fontLarge')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={editingFieldConfig?.fontFamily} onValueChange={(val) => setEditingFieldConfig(c => ({ ...c, fontFamily: val }))}>
-                                <SelectTrigger className="w-32 h-8"><SelectValue placeholder={t('fontSelect')} /></SelectTrigger>
-                                <SelectContent>
-                                    {allFonts.map(font => (
-                                        <SelectItem key={font.value} value={font.value} style={{ fontFamily: font.value }}>{font.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {/* Hide formatting options for select fields */}
+                            {!['letterType', 'sentTo'].includes(isEditingField?.field as string) && (
+                                <>
+                                    <Tooltip><TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" onClick={() => setEditingFieldConfig(c => ({ ...c, direction: 'ltr' }))}><AlignLeft className="h-4 w-4" /></Button>
+                                    </TooltipTrigger><TooltipContent><p>LTR</p></TooltipContent></Tooltip>
+                                    <Tooltip><TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" onClick={() => setEditingFieldConfig(c => ({ ...c, direction: 'rtl' }))}><AlignRight className="h-4 w-4" /></Button>
+                                    </TooltipTrigger><TooltipContent><p>RTL</p></TooltipContent></Tooltip>
+                                    <Select value={editingFieldConfig?.fontSize} onValueChange={(val) => setEditingFieldConfig(c => ({ ...c, fontSize: val }))}>
+                                        <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="0.75rem">{t('fontSmall')}</SelectItem>
+                                            <SelectItem value="0.875rem">{t('fontNormal')}</SelectItem>
+                                            <SelectItem value="1rem">{t('fontMedium')}</SelectItem>
+                                            <SelectItem value="1.125rem">{t('fontLarge')}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={editingFieldConfig?.fontFamily} onValueChange={(val) => setEditingFieldConfig(c => ({ ...c, fontFamily: val }))}>
+                                        <SelectTrigger className="w-32 h-8"><SelectValue placeholder={t('fontSelect')} /></SelectTrigger>
+                                        <SelectContent>
+                                            {allFonts.map(font => (
+                                                <SelectItem key={font.value} value={font.value} style={{ fontFamily: font.value }}>{font.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </>
+                            )}
                         </TooltipProvider>
                         {isEditingField?.field === 'furtherDetails' && isEditingField.item && 'taskNumber' in isEditingField.item && (
                             <Button onClick={handleAiSuggest} disabled={isAiSuggesting} variant="ghost" size="icon" className="mr-auto">
@@ -365,12 +372,38 @@ const EditDialog = () => {
                         )}
                     </div>
                     <div className="glass-card rounded-md p-1">
-                        <Textarea
-                            value={editingFieldValue}
-                            onChange={(e) => setEditingFieldValue(e.target.value)}
-                            className="h-48 resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-                            style={{ direction: editingFieldConfig?.direction, fontSize: editingFieldConfig?.fontSize, fontFamily: editingFieldConfig?.fontFamily }}
-                        />
+                        {/* Render different inputs based on field type */}
+                        {isEditingField?.field === 'letterType' ? (
+                            <Select value={editingFieldValue} onValueChange={setEditingFieldValue}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('selectLetterType')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {['letterType_general', 'letterType_termination', 'letterType_service_extension', 'letterType_candidacy', 'letterType_position_change', 'letterType_commencement', 'letterType_confirmation', 'letterType_leave', 'letterType_material_request', 'letterType_material_return'].map(opt => (
+                                        <SelectItem key={opt} value={opt}>{t(opt)}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        ) : isEditingField?.field === 'sentTo' ? (
+                            <Select value={editingFieldValue} onValueChange={setEditingFieldValue}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('selectDepartment')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {['sentTo_chairman', 'sentTo_ceo', 'sentTo_hr', 'sentTo_accounting', 'sentTo_supply_chain', 'sentTo_equipment', 'sentTo_office_slemani', 'sentTo_office_kirkuk', 'sentTo_office_diyala'].map(opt => (
+                                        <SelectItem key={opt} value={opt}>{t(opt)}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        ) : (
+                            <Textarea
+                                value={editingFieldValue}
+                                onChange={(e) => setEditingFieldValue(e.target.value)}
+                                className="h-48 resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+                                style={{ direction: editingFieldConfig?.direction, fontSize: editingFieldConfig?.fontSize, fontFamily: editingFieldConfig?.fontFamily }}
+                            />
+                        )}
+
                     </div>
                 </div>
                 <DialogFooter>

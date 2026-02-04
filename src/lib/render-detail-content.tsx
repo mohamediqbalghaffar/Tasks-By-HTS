@@ -166,14 +166,24 @@ export const renderDetailContent = (
                             <div className="flex items-start gap-4">
                                 <Building className="h-5 w-5 mt-1 text-primary shrink-0" />
                                 <div>
-                                    <Label className="text-sm text-muted-foreground">{t('sentToLabel')}</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Label className="text-sm text-muted-foreground">{t('sentToLabel')}</Label>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleOpenEditField(item, 'sentTo')}>
+                                            <Edit className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                     <p className="text-foreground">{t((item as ApprovalLetter).sentTo) || (item as ApprovalLetter).sentTo || '-'}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
                                 <Type className="h-5 w-5 mt-1 text-primary shrink-0" />
                                 <div>
-                                    <Label className="text-sm text-muted-foreground">{t('letterTypeLabel')}</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Label className="text-sm text-muted-foreground">{t('letterTypeLabel')}</Label>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleOpenEditField(item, 'letterType')}>
+                                            <Edit className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                     <p className="text-foreground">{t((item as ApprovalLetter).letterType) || (item as ApprovalLetter).letterType || '-'}</p>
                                 </div>
                             </div>
