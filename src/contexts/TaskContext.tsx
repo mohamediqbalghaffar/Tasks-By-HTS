@@ -296,6 +296,223 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const shareItem = useCallback(async (item: Task | ApprovalLetter, targetShareCode: number, force: boolean = false) => {
+        if (!currentUser || !db) return 'error';
+
+        try {
+            // Find target user by share code
+            const q = query(collection(db, 'users'), where('shareCode', '==', targetShareCode));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                toast({ title: t('error'), description: t('userNotFoundWithShareCode'), variant: 'destructive' });
+                return 'user_not_found';
+            }
+
+            const targetUserDoc = querySnapshot.docs[0];
+            const targetUserId = targetUserDoc.id;
+            const targetUserData = targetUserDoc.data();
+
+            // Determine collection name based on type
+            const originalItemType = 'taskNumber' in item ? 'task' : 'letter';
+            const sourceCollection = originalItemType === 'task' ? 'tasks' : 'approvalLetters';
+
+            // Check if already shared
+            if (!force) {
+                const shareCheckRef = doc(db, 'users', currentUser.uid, sourceCollection, item.id, 'shares', targetUserId);
+                const shareCheckSnap = await getDoc(shareCheckRef);
+
+                if (shareCheckSnap.exists()) {
+                    return 'already_shared';
+                }
+            }
+
+            // Prepare received item data
+            // Clean data to remove undefined values which Firestore hates
+            const { id, userId, ...itemData } = item as any;
+
+            // Convert Dates to Timestamps for Firestore
+            const dataToStore = { ...itemData };
+            if (dataToStore.startTime) dataToStore.startTime = Timestamp.fromDate(new Date(dataToStore.startTime));
+            if (dataToStore.createdAt) dataToStore.createdAt = Timestamp.fromDate(new Date(dataToStore.createdAt));
+            if (dataToStore.updatedAt) dataToStore.updatedAt = Timestamp.fromDate(new Date(dataToStore.updatedAt));
+            if (dataToStore.reminder) dataToStore.reminder = Timestamp.fromDate(new Date(dataToStore.reminder));
+            if (dataToStore.originalReminder) dataToStore.originalReminder = Timestamp.fromDate(new Date(dataToStore.originalReminder));
+
+            delete dataToStore.sharedCount;
+
+            // Add to target user's receivedItems subcollection
+            await addDoc(collection(db, 'users', targetUserId, 'receivedItems'), {
+                originalItemId: item.id,
+                originalItemType,
+                data: dataToStore,
+                originalOwnerUid: currentUser.uid, // Track original owner for markAsSeen
+                senderUid: currentUser.uid,
+                senderName: userProfile?.name || currentUser.email || 'Unknown',
+                senderPhotoURL: userProfile?.photoURL || null,
+                sharedAt: serverTimestamp()
+            });
+
+            // Track this share in the source item's 'shares' subcollection
+            await setDoc(doc(db, 'users', currentUser.uid, sourceCollection, item.id, 'shares', targetUserId), {
+                uid: targetUserId,
+                name: targetUserData.name || 'Unknown',
+                photoURL: targetUserData.photoURL || null,
+                sharedAt: serverTimestamp(),
+                lastSeen: null
+            });
+
+            // Increment sharedCount on the item itself
+            const itemRef = doc(db, 'users', currentUser.uid, sourceCollection, item.id);
+            await updateDoc(itemRef, {
+                sharedCount: (item.sharedCount || 0) + 1,
+                updatedAt: serverTimestamp()
+            });
+
+            toast({
+                title: t('itemSharedSuccess'),
+                description: t('itemSharedDesc', { name: targetUserData.name || 'User' })
+            });
+
+            return 'success';
+
+        } catch (error) {
+            console.error("Error sharing item:", error);
+            toast({ title: t('errorSharingItem'), description: String(error), variant: 'destructive' });
+            return 'error';
+        }
+    }, [currentUser, userProfile, t]);
+
+    const markAsSeen = useCallback(async (item: ReceivedItem) => {
+        if (!currentUser || !db || !item.originalOwnerUid || !item.originalItemId) return;
+
+        try {
+            // Determine collection based on type
+            const sourceCollection = item.originalItemType === 'task' ? 'tasks' : 'approvalLetters';
+
+            // Path: users/{ownerId}/{collection}/{itemId}/shares/{myId}
+            const shareDocRef = doc(db, 'users', item.originalOwnerUid, sourceCollection, item.originalItemId, 'shares', currentUser.uid);
+
+            await updateDoc(shareDocRef, {
+                lastSeen: serverTimestamp()
+            });
+        } catch (error) {
+            console.error("Error marking item as seen:", error);
+            // We don't toast error here to avoid annoying user if network fails silently or permission issue
+        }
+    }, [currentUser]);
+
+    const updateReceivedItem = useCallback(async (id: string, field: string, value: any, config?: FieldConfig) => {
+        if (!currentUser || !db) return;
+
+        try {
+            // 1. Update own copy first (Optimistic UI handled below)
+            const itemRef = doc(db, 'users', currentUser.uid, 'receivedItems', id);
+
+            // Get current item to know original owner/id
+            const currentItem = receivedItems.find(i => i.id === id);
+            if (!currentItem) {
+                console.error("Item not found locally");
+                return;
+            }
+
+            const updatePath = `data.${field}`;
+            const updateData: any = {
+                [updatePath]: value,
+            };
+
+            if (config) {
+                const configPath = `data.${field}Config`;
+                updateData[configPath] = config;
+            }
+
+            // Execute local update
+            await updateDoc(itemRef, updateData);
+
+            // 2. Update Original Item (Source of Truth)
+            const collectionName = currentItem.originalItemType === 'task' ? 'tasks' : 'approvalLetters';
+            // Check if we are NOT the original owner (we shouldn't be for a received item, but good sanity check)
+            if (currentItem.originalOwnerUid !== currentUser.uid) {
+                const originalRef = doc(db!, 'users', currentItem.originalOwnerUid, collectionName, currentItem.originalItemId);
+
+                const originalUpdateData: any = {
+                    [field]: value
+                };
+                if (config) {
+                    originalUpdateData[`${field}Config`] = config;
+                }
+
+                // Try to update original. Note: This depends on Firestore rules allowing write.
+                // If rules block this, we should catch error.
+                try {
+                    await updateDoc(originalRef, originalUpdateData);
+                } catch (e) {
+                    // Suppress original update error (likely deleted by owner) to avoid confusing user
+                    console.warn(`Could not update original item (likely deleted):`, e);
+                }
+
+                // 3. Fan-out to other sharers
+                // We need to read the 'shares' subcollection of the ORIGINAL item to know who else has it.
+                try {
+                    const sharesRef = collection(db!, 'users', currentItem.originalOwnerUid, collectionName, currentItem.originalItemId, 'shares');
+                    const sharesSnap = await getDocs(sharesRef);
+
+                    const updatePromises = sharesSnap.docs.map(async (shareDoc) => {
+                        const targetUserId = shareDoc.id; // The doc ID is the UID
+
+                        // Skip ourselves (already updated)
+                        if (targetUserId === currentUser.uid) return;
+
+                        // To find the 'receivedItem' ID for the target user, we query their receivedItems
+                        // where originalItemId matches. 
+                        const targetReceivedRef = collection(db!, 'users', targetUserId, 'receivedItems');
+                        const q = query(targetReceivedRef, where('originalItemId', '==', currentItem.originalItemId));
+                        const targetSnap = await getDocs(q);
+
+                        if (!targetSnap.empty) {
+                            const targetDoc = targetSnap.docs[0];
+                            await updateDoc(doc(db!, 'users', targetUserId, 'receivedItems', targetDoc.id), updateData);
+                        }
+                    });
+
+                    await Promise.all(updatePromises);
+
+                } catch (e) {
+                    console.error("Error pushing updates to other sharers:", e);
+                }
+            }
+
+            // Optimistic update for local state
+            setReceivedItems(prev => prev.map(item => {
+                if (item.id === id) {
+                    const newItem = { ...item, data: { ...item.data, [field]: value } };
+                    if (config) {
+                        (newItem.data as any)[`${field}Config`] = config;
+                    }
+                    return newItem;
+                }
+                return item;
+            }));
+
+        } catch (error) {
+            console.error("Error updating received item:", error);
+            // Only toast if local update failed (critical error)
+            toast({ title: t('errorSavingChanges'), description: String(error), variant: 'destructive' });
+        }
+    }, [currentUser, db, receivedItems, t]);
+
+    const deleteReceivedItem = useCallback(async (id: string) => {
+        if (!currentUser || !db) return;
+        try {
+            await deleteDoc(doc(db, 'users', currentUser.uid, 'receivedItems', id));
+            setReceivedItems(prev => prev.filter(item => item.id !== id));
+            toast({ title: t('itemDeletedSuccess') });
+        } catch (error) {
+            console.error("Error deleting received item:", error);
+            toast({ title: t('errorDeletingItem'), description: String(error), variant: 'destructive' });
+        }
+    }, [currentUser, t]);
+
     const handleSave = useCallback(async (id: string, type: 'task' | 'letter' | 'chat' | 'delete-chat', data: any): Promise<boolean> => {
         const isNew = id === 'new';
         if (isNew && (type === 'task' || type === 'letter')) {
@@ -485,6 +702,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     // Given the limit, I'll add the remaining core data functions below.
 
     const toggleIsDone = useCallback((id: string, type: 'task' | 'letter', completionDate?: Date) => {
+        // Check if item is a shared received item
+        const sharedItem = receivedItems.find(i => i.id === id);
+        if (sharedItem) {
+            updateReceivedItem(id, 'isDone', !sharedItem.data.isDone);
+            return;
+        }
+
+        // ... existing implementation starts below
         // ... (implementation similar to existing)
         let itemToUpdate: Task | ApprovalLetter | undefined;
         let sourceList: 'active' | 'expired' | undefined;
@@ -557,6 +782,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     // Simplified placeholders for remaining functions to fit context
     const handleUrgencyChange = useCallback(async (item: Task | ApprovalLetter) => {
+        const sharedItem = receivedItems.find(i => i.id === item.id);
+        if (sharedItem) {
+            await updateReceivedItem(item.id, 'isUrgent', !item.isUrgent);
+            return;
+        }
+
         const newIsUrgent = !item.isUrgent;
         const type = 'taskNumber' in item ? 'task' : 'letter';
 
@@ -581,6 +812,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, tasks, approvalLetters, t]);
 
     const handleReminderChange = useCallback(async (id: string, type: 'task' | 'letter', date: Date | null) => {
+        const sharedItem = receivedItems.find(i => i.id === id);
+        if (sharedItem) {
+            await updateReceivedItem(id, 'reminder', date);
+            return;
+        }
+
         // Clear notification status for this item when reminder changes
         const item = (type === 'task' ? [...tasks, ...expiredTasksList] : [...approvalLetters, ...expiredApprovalLettersList]).find(i => i.id === id);
         if (item?.reminder) {
@@ -611,6 +848,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, t]);
 
     const handlePriorityChange = useCallback(async (id: string, type: 'task' | 'letter', priority: number) => {
+        const sharedItem = receivedItems.find(i => i.id === id);
+        if (sharedItem) {
+            await updateReceivedItem(id, 'priority', priority);
+            return;
+        }
+
         if (currentUser && db) {
             try {
                 const collectionName = type === 'task' ? 'tasks' : 'approvalLetters';
@@ -632,6 +875,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, tasks, approvalLetters, t]);
 
     const handleSaveField = useCallback(async (id: string, field: keyof Task | keyof ApprovalLetter, value: any, type: 'task' | 'letter', config?: FieldConfig) => {
+        // Check if shared
+        const sharedItem = receivedItems.find(i => i.id === id);
+        if (sharedItem) {
+            await updateReceivedItem(id, field as string, value, config);
+            return;
+        }
+
         if (currentUser && db) {
             try {
                 const collectionName = type === 'task' ? 'tasks' : 'approvalLetters';
@@ -670,6 +920,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, tasks, approvalLetters, t]);
 
     const handleDateChange = useCallback(async (id: string, type: 'task' | 'letter', date: Date) => {
+        const sharedItem = receivedItems.find(i => i.id === id);
+        if (sharedItem) {
+            await updateReceivedItem(id, 'startTime', date);
+            return;
+        }
+
         if (currentUser && db) {
             try {
                 const collectionName = type === 'task' ? 'tasks' : 'approvalLetters';
@@ -881,228 +1137,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: t('featureComingSoon') });
     }, [t]);
 
-    const shareItem = useCallback(async (item: Task | ApprovalLetter, targetShareCode: number, force: boolean = false) => {
-        if (!currentUser || !db) return 'error';
 
-        try {
-            // Find target user by share code
-            const q = query(collection(db, 'users'), where('shareCode', '==', targetShareCode));
-            const querySnapshot = await getDocs(q);
-
-            if (querySnapshot.empty) {
-                toast({ title: t('error'), description: t('userNotFoundWithShareCode'), variant: 'destructive' });
-                return 'user_not_found';
-            }
-
-            const targetUserDoc = querySnapshot.docs[0];
-            const targetUserId = targetUserDoc.id;
-            const targetUserData = targetUserDoc.data();
-
-            // Determine collection name based on type
-            const originalItemType = 'taskNumber' in item ? 'task' : 'letter';
-            const sourceCollection = originalItemType === 'task' ? 'tasks' : 'approvalLetters';
-
-            // Check if already shared
-            if (!force) {
-                const shareCheckRef = doc(db, 'users', currentUser.uid, sourceCollection, item.id, 'shares', targetUserId);
-                const shareCheckSnap = await getDoc(shareCheckRef);
-
-                if (shareCheckSnap.exists()) {
-                    return 'already_shared';
-                }
-            }
-
-            // Prepare received item data
-            // Clean data to remove undefined values which Firestore hates
-            const { id, userId, ...itemData } = item as any;
-
-            // Convert Dates to Timestamps for Firestore
-            const dataToStore = { ...itemData };
-            if (dataToStore.startTime) dataToStore.startTime = Timestamp.fromDate(new Date(dataToStore.startTime));
-            if (dataToStore.createdAt) dataToStore.createdAt = Timestamp.fromDate(new Date(dataToStore.createdAt));
-            if (dataToStore.updatedAt) dataToStore.updatedAt = Timestamp.fromDate(new Date(dataToStore.updatedAt));
-            if (dataToStore.reminder) dataToStore.reminder = Timestamp.fromDate(new Date(dataToStore.reminder));
-            if (dataToStore.originalReminder) dataToStore.originalReminder = Timestamp.fromDate(new Date(dataToStore.originalReminder));
-
-            // Remove sharedCount from the data sent to receiver, or keep it? 
-            // Receiver probably doesn't need to know how many others have it, but maybe useful. 
-            // Let's keep it clean and remove it from the data copy if we want receiving copy to be independent starting point.
-            delete dataToStore.sharedCount;
-
-            // Add to target user's receivedItems subcollection
-            await addDoc(collection(db, 'users', targetUserId, 'receivedItems'), {
-                originalItemId: item.id,
-                originalItemType,
-                data: dataToStore,
-                originalOwnerUid: currentUser.uid, // Track original owner for markAsSeen
-                senderUid: currentUser.uid,
-                senderName: userProfile?.name || currentUser.email || 'Unknown',
-                senderPhotoURL: userProfile?.photoURL || null,
-                sharedAt: serverTimestamp()
-            });
-
-            // Track this share in the source item's 'shares' subcollection
-            await setDoc(doc(db, 'users', currentUser.uid, sourceCollection, item.id, 'shares', targetUserId), {
-                uid: targetUserId,
-                name: targetUserData.name || 'Unknown',
-                photoURL: targetUserData.photoURL || null,
-                sharedAt: serverTimestamp(),
-                lastSeen: null
-            });
-
-            // Increment sharedCount on the item itself
-            const itemRef = doc(db, 'users', currentUser.uid, sourceCollection, item.id);
-            await updateDoc(itemRef, {
-                sharedCount: (item.sharedCount || 0) + 1,
-                updatedAt: serverTimestamp()
-            });
-
-            toast({
-                title: t('itemSharedSuccess'),
-                description: t('itemSharedDesc', { name: targetUserData.name || 'User' })
-            });
-
-            return 'success';
-
-        } catch (error) {
-            console.error("Error sharing item:", error);
-            toast({ title: t('errorSharingItem'), description: String(error), variant: 'destructive' });
-            return 'error';
-        }
-    }, [currentUser, userProfile, t]);
-
-    const markAsSeen = useCallback(async (item: ReceivedItem) => {
-        if (!currentUser || !db || !item.originalOwnerUid || !item.originalItemId) return;
-
-        try {
-            // Determine collection based on type
-            const sourceCollection = item.originalItemType === 'task' ? 'tasks' : 'approvalLetters';
-
-            // Path: users/{ownerId}/{collection}/{itemId}/shares/{myId}
-            const shareDocRef = doc(db, 'users', item.originalOwnerUid, sourceCollection, item.originalItemId, 'shares', currentUser.uid);
-
-            await updateDoc(shareDocRef, {
-                lastSeen: serverTimestamp()
-            });
-        } catch (error) {
-            console.error("Error marking item as seen:", error);
-            // We don't toast error here to avoid annoying user if network fails silently or permission issue
-        }
-    }, [currentUser]);
-
-    const updateReceivedItem = useCallback(async (id: string, field: string, value: any, config?: FieldConfig) => {
-        if (!currentUser || !db) return;
-
-        try {
-            // 1. Update own copy first (Optimistic UI handled below)
-            const itemRef = doc(db, 'users', currentUser.uid, 'receivedItems', id);
-
-            // Get current item to know original owner/id
-            const currentItem = receivedItems.find(i => i.id === id);
-            if (!currentItem) {
-                console.error("Item not found locally");
-                return;
-            }
-
-            const updatePath = `data.${field}`;
-            const updateData: any = {
-                [updatePath]: value,
-            };
-
-            if (config) {
-                const configPath = `data.${field}Config`;
-                updateData[configPath] = config;
-            }
-
-            // Execute local update
-            await updateDoc(itemRef, updateData);
-
-            // 2. Update Original Item (Source of Truth)
-            const collectionName = currentItem.originalItemType === 'task' ? 'tasks' : 'approvalLetters';
-            // Check if we are NOT the original owner (we shouldn't be for a received item, but good sanity check)
-            if (currentItem.originalOwnerUid !== currentUser.uid) {
-                const originalRef = doc(db!, 'users', currentItem.originalOwnerUid, collectionName, currentItem.originalItemId);
-
-                const originalUpdateData: any = {
-                    [field]: value
-                };
-                if (config) {
-                    originalUpdateData[`${field}Config`] = config;
-                }
-
-                // Try to update original. Note: This depends on Firestore rules allowing write.
-                // If rules block this, we should catch error.
-                try {
-                    await updateDoc(originalRef, originalUpdateData);
-                } catch (e) {
-                    console.error("Could not update original item (likely permission issue):", e);
-                    // If we can't update original, we definitely can't fan-out to others reliably.
-                    // But we proceed with local update at least.
-                }
-
-                // 3. Fan-out to other sharers
-                // We need to read the 'shares' subcollection of the ORIGINAL item to know who else has it.
-                try {
-                    const sharesRef = collection(db!, 'users', currentItem.originalOwnerUid, collectionName, currentItem.originalItemId, 'shares');
-                    const sharesSnap = await getDocs(sharesRef);
-
-                    const updatePromises = sharesSnap.docs.map(async (shareDoc) => {
-                        const targetUserId = shareDoc.id; // The doc ID is the UID
-
-                        // Skip ourselves (already updated)
-                        if (targetUserId === currentUser.uid) return;
-
-                        // To find the 'receivedItem' ID for the target user, we query their receivedItems
-                        // where originalItemId matches. 
-                        // Note: This is inefficient (Read per user). 
-                        // Better structure would store the receivedItemId in the 'shares' doc, 
-                        // but we work with what we have.
-                        const targetReceivedRef = collection(db!, 'users', targetUserId, 'receivedItems');
-                        const q = query(targetReceivedRef, where('originalItemId', '==', currentItem.originalItemId));
-                        const targetSnap = await getDocs(q);
-
-                        if (!targetSnap.empty) {
-                            const targetDoc = targetSnap.docs[0];
-                            await updateDoc(doc(db!, 'users', targetUserId, 'receivedItems', targetDoc.id), updateData);
-                        }
-                    });
-
-                    await Promise.all(updatePromises);
-
-                } catch (e) {
-                    console.error("Error pushing updates to other sharers:", e);
-                }
-            }
-
-            // Optimistic update for local state
-            setReceivedItems(prev => prev.map(item => {
-                if (item.id === id) {
-                    const newItem = { ...item, data: { ...item.data, [field]: value } };
-                    if (config) {
-                        (newItem.data as any)[`${field}Config`] = config;
-                    }
-                    return newItem;
-                }
-                return item;
-            }));
-
-        } catch (error) {
-            console.error("Error updating received item:", error);
-            toast({ title: t('errorSavingChanges'), description: String(error), variant: 'destructive' });
-        }
-    }, [currentUser, db, receivedItems, t]);
-
-    const deleteReceivedItem = useCallback(async (id: string) => {
-        if (!currentUser || !db) return;
-        try {
-            await deleteDoc(doc(db, 'users', currentUser.uid, 'receivedItems', id));
-            setReceivedItems(prev => prev.filter(item => item.id !== id));
-            toast({ title: t('itemDeletedSuccess') }); // Add translation key if missing, or use generic
-        } catch (error) {
-            console.error("Error deleting received item:", error);
-            toast({ title: t('errorDeletingItem'), description: String(error), variant: 'destructive' });
-        }
-    }, [currentUser, t]);
 
     // AI Suggest
     const handleAiSuggest = useCallback(async () => {
