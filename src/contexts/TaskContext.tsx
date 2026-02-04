@@ -520,11 +520,28 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: t('syncing') || "Syncing...", description: "Updating shared items from source..." });
 
         const updates = receivedItems.map(async (item) => {
-            if (!item.originalOwnerUid || !item.originalItemId) return;
+            // Robust Fallback Logic for Legacy Items
+            const ownerUid = item.originalOwnerUid || item.senderUid;
+            let itemId = item.originalItemId;
+            let type = item.originalItemType;
+
+            // Fallback for missing itemId: assume received item ID matches original (legacy behavior)
+            if (!itemId) itemId = item.id;
+
+            // Fallback for missing type
+            if (!type && item.data) {
+                if ('taskNumber' in item.data) type = 'task';
+                else if ('letterNumber' in item.data) type = 'letter';
+            }
+
+            if (!ownerUid || !itemId || !type) {
+                console.warn(`Cannot sync item ${item.id}: Missing metadata (Owner: ${ownerUid}, ID: ${itemId}, Type: ${type})`);
+                return;
+            }
 
             try {
-                const collectionName = item.originalItemType === 'task' ? 'tasks' : 'approvalLetters';
-                const originalRef = doc(db!, 'users', item.originalOwnerUid, collectionName, item.originalItemId);
+                const collectionName = type === 'task' ? 'tasks' : 'approvalLetters';
+                const originalRef = doc(db!, 'users', ownerUid, collectionName, itemId);
 
                 const snap = await getDoc(originalRef);
                 if (snap.exists()) {
@@ -534,10 +551,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                     const receivedRef = doc(db!, 'users', currentUser.uid, 'receivedItems', item.id);
                     await updateDoc(receivedRef, {
                         data: freshData,
-                        updatedAt: serverTimestamp()
+                        updatedAt: serverTimestamp(),
+                        // Heal the missing metadata!
+                        originalOwnerUid: ownerUid,
+                        originalItemId: itemId,
+                        originalItemType: type
                     });
                 } else {
-                    console.warn(`Original item ${item.originalItemId} deleted.`);
+                    console.warn(`Original item ${itemId} deleted from owner ${ownerUid}.`);
                 }
             } catch (e) {
                 console.error(`Failed to sync item ${item.id}`, e);
@@ -547,6 +568,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         await Promise.all(updates);
         toast({ title: t('syncComplete') || "Sync Complete", description: "Shared items have been updated." });
     }, [currentUser, db, receivedItems, t]);
+
 
 
     const handleSave = useCallback(async (id: string, type: 'task' | 'letter' | 'chat' | 'delete-chat', data: any): Promise<boolean> => {
