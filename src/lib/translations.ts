@@ -645,11 +645,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "errorUpdatingItem": "هەڵە لە نوێکردنەوەی ئایتم.",
     "editLetterInfo": "دەستکاری زانیاری نووسراو",
     "letterCode": "کۆدی نووسراو",
-    "letterNameValueLabel": "ناونیشانی نووسراو",
+
     "copyText": "کۆپیکردن",
     "copied": "کۆپیکرا",
-    "saveChanges": "پاراستنی گۆڕانکارییەکان",
-    "cancel": "پاشگەزبوونەوە"
+
 
 
   },
