@@ -994,15 +994,19 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         if (!currentUser || !db) return;
 
         try {
+            // 1. Update own copy first (Optimistic UI handled below)
             const itemRef = doc(db, 'users', currentUser.uid, 'receivedItems', id);
 
-            // We need to update the nested 'data' object
-            // Use dot notation for nested fields: "data.fieldName"
+            // Get current item to know original owner/id
+            const currentItem = receivedItems.find(i => i.id === id);
+            if (!currentItem) {
+                console.error("Item not found locally");
+                return;
+            }
+
             const updatePath = `data.${field}`;
             const updateData: any = {
                 [updatePath]: value,
-                // We might want to track local updates or separate 'userOverrides' if we wanted to stay synced with original
-                // But request says "receiving users just have authority to open the card to see its info and edit" implies their own copy.
             };
 
             if (config) {
@@ -1010,9 +1014,67 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 updateData[configPath] = config;
             }
 
+            // Execute local update
             await updateDoc(itemRef, updateData);
 
-            // Optimistic update
+            // 2. Update Original Item (Source of Truth)
+            const collectionName = currentItem.originalItemType === 'task' ? 'tasks' : 'approvalLetters';
+            // Check if we are NOT the original owner (we shouldn't be for a received item, but good sanity check)
+            if (currentItem.originalOwnerUid !== currentUser.uid) {
+                const originalRef = doc(db!, 'users', currentItem.originalOwnerUid, collectionName, currentItem.originalItemId);
+
+                const originalUpdateData: any = {
+                    [field]: value
+                };
+                if (config) {
+                    originalUpdateData[`${field}Config`] = config;
+                }
+
+                // Try to update original. Note: This depends on Firestore rules allowing write.
+                // If rules block this, we should catch error.
+                try {
+                    await updateDoc(originalRef, originalUpdateData);
+                } catch (e) {
+                    console.error("Could not update original item (likely permission issue):", e);
+                    // If we can't update original, we definitely can't fan-out to others reliably.
+                    // But we proceed with local update at least.
+                }
+
+                // 3. Fan-out to other sharers
+                // We need to read the 'shares' subcollection of the ORIGINAL item to know who else has it.
+                try {
+                    const sharesRef = collection(db!, 'users', currentItem.originalOwnerUid, collectionName, currentItem.originalItemId, 'shares');
+                    const sharesSnap = await getDocs(sharesRef);
+
+                    const updatePromises = sharesSnap.docs.map(async (shareDoc) => {
+                        const targetUserId = shareDoc.id; // The doc ID is the UID
+
+                        // Skip ourselves (already updated)
+                        if (targetUserId === currentUser.uid) return;
+
+                        // To find the 'receivedItem' ID for the target user, we query their receivedItems
+                        // where originalItemId matches. 
+                        // Note: This is inefficient (Read per user). 
+                        // Better structure would store the receivedItemId in the 'shares' doc, 
+                        // but we work with what we have.
+                        const targetReceivedRef = collection(db!, 'users', targetUserId, 'receivedItems');
+                        const q = query(targetReceivedRef, where('originalItemId', '==', currentItem.originalItemId));
+                        const targetSnap = await getDocs(q);
+
+                        if (!targetSnap.empty) {
+                            const targetDoc = targetSnap.docs[0];
+                            await updateDoc(doc(db!, 'users', targetUserId, 'receivedItems', targetDoc.id), updateData);
+                        }
+                    });
+
+                    await Promise.all(updatePromises);
+
+                } catch (e) {
+                    console.error("Error pushing updates to other sharers:", e);
+                }
+            }
+
+            // Optimistic update for local state
             setReceivedItems(prev => prev.map(item => {
                 if (item.id === id) {
                     const newItem = { ...item, data: { ...item.data, [field]: value } };
@@ -1028,7 +1090,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error updating received item:", error);
             toast({ title: t('errorSavingChanges'), description: String(error), variant: 'destructive' });
         }
-    }, [currentUser, t]);
+    }, [currentUser, db, receivedItems, t]);
 
     const deleteReceivedItem = useCallback(async (id: string) => {
         if (!currentUser || !db) return;

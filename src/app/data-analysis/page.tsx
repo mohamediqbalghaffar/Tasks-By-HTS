@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTask, Task, ApprovalLetter } from '@/contexts/TaskContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useUI } from '@/contexts/UIContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -106,6 +107,7 @@ export default function DataAnalysisPage() {
     const { t, getDateFnsLocale } = useLanguage();
     const router = useRouter();
 
+    const { currentUser } = useAuth(); // Needed for deduplication
     const {
         isMounted,
         isInitialDataLoading,
@@ -113,6 +115,7 @@ export default function DataAnalysisPage() {
         approvalLetters,
         expiredTasksList,
         expiredApprovalLettersList,
+        receivedItems, // Get received items
     } = useTask();
 
     const {
@@ -178,8 +181,43 @@ export default function DataAnalysisPage() {
         const relevantItems = showTasks ? tasks : approvalLetters;
         const relevantExpired = showTasks ? expiredTasksList : expiredApprovalLettersList;
 
-        // ALL items including expired and deleted
-        const allItems = [...relevantItems, ...relevantExpired];
+        // Process received items (Shared with me)
+        // 1. Filter by type (task/letter) based on showTasks
+        // 2. Deduplicate: exclude items where I am the original owner (already in relevantItems)
+        // 3. Deduplicate: if multiple shares of same item exist, take only one
+        const relevantReceivedItems = receivedItems
+            .filter(item => {
+                const typeMatch = showTasks ? item.originalItemType === 'task' : item.originalItemType === 'letter';
+                const notMyOwn = item.originalOwnerUid !== currentUser?.uid;
+                return typeMatch && notMyOwn;
+            })
+            .filter((item, index, self) =>
+                index === self.findIndex((t) => t.originalItemId === item.originalItemId)
+            )
+            // Map to Task | ApprovalLetter compatible object
+            .map(item => {
+                // Cast to any to access properties that might be omitted in the strict type definition but exist at runtime
+                const data = { ...(item.data as any) };
+
+                // Ensure dates are Date objects
+                if (data.createdAt?.toDate) data.createdAt = data.createdAt.toDate();
+                else if (typeof data.createdAt === 'string') data.createdAt = new Date(data.createdAt);
+
+                if (data.updatedAt?.toDate) data.updatedAt = data.updatedAt.toDate();
+                else if (typeof data.updatedAt === 'string') data.updatedAt = new Date(data.updatedAt);
+
+                if (data.reminder?.toDate) data.reminder = data.reminder.toDate();
+                else if (typeof data.reminder === 'string') data.reminder = new Date(data.reminder);
+
+                // Add received item ID as the ID for this analysis item
+                return {
+                    ...data,
+                    id: item.id,
+                } as Task | ApprovalLetter;
+            });
+
+        // ALL items including expired, deleted, AND shared
+        const allItems = [...relevantItems, ...relevantExpired, ...relevantReceivedItems];
 
         // Apply date filter
         let filtered = allItems;
@@ -285,7 +323,7 @@ export default function DataAnalysisPage() {
         ].filter(item => item.value > 0);
 
         return { kpiData: kpi, matrixData: matrix, statusData: status, priorityData: priority, filteredItems: filtered };
-    }, [tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, showTasks, t, fromDate, toDate]);
+    }, [tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, receivedItems, currentUser, showTasks, t, fromDate, toDate]);
 
     const handleScatterClick = React.useCallback((props: any) => {
         if (props && props.id) {
