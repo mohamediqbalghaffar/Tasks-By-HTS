@@ -11,7 +11,7 @@ import { ReceivedItem } from '@/contexts/TaskContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { PanelRight, PanelLeft, ChevronsLeft, ListTodo, FileText, Send, Inbox } from 'lucide-react';
+import { PanelRight, PanelLeft, ChevronsLeft, ListTodo, FileText, Send, Inbox, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useUI } from '@/contexts/UIContext';
@@ -52,7 +52,8 @@ export default function MutualPage() {
         shareItem,
         markAsSeen,
         updateReceivedItem,
-        deleteReceivedItem
+        deleteReceivedItem,
+        resyncReceivedItems
     } = useTask();
     const { handleOpenEditField } = useUI();
     const [selectedItem, setSelectedItem] = useState<MutualItem | SentItem | null>(null);
@@ -154,6 +155,15 @@ export default function MutualPage() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                     {t('mutualItems')}
                 </h1>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={resyncReceivedItems}
+                    className="ml-auto rounded-full"
+                    title={t('sync') || 'Sync'}
+                >
+                    <RefreshCw className="h-5 w-5" />
+                </Button>
             </div>
 
             <div className="flex justify-center mb-6">

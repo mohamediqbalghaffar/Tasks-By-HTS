@@ -178,6 +178,7 @@ interface TaskContextType {
     handleAiSuggest: () => Promise<void>;
     updateReceivedItem: (id: string, field: string, value: any, config?: FieldConfig) => Promise<void>;
     deleteReceivedItem: (id: string) => Promise<void>;
+    resyncReceivedItems: () => Promise<void>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -512,6 +513,41 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             toast({ title: t('errorDeletingItem'), description: String(error), variant: 'destructive' });
         }
     }, [currentUser, t]);
+
+    const resyncReceivedItems = useCallback(async () => {
+        if (!currentUser || !db) return;
+
+        toast({ title: t('syncing') || "Syncing...", description: "Updating shared items from source..." });
+
+        const updates = receivedItems.map(async (item) => {
+            if (!item.originalOwnerUid || !item.originalItemId) return;
+
+            try {
+                const collectionName = item.originalItemType === 'task' ? 'tasks' : 'approvalLetters';
+                const originalRef = doc(db!, 'users', item.originalOwnerUid, collectionName, item.originalItemId);
+
+                const snap = await getDoc(originalRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    const { id, userId, sharedCount, ...freshData } = data as any;
+
+                    const receivedRef = doc(db!, 'users', currentUser.uid, 'receivedItems', item.id);
+                    await updateDoc(receivedRef, {
+                        data: freshData,
+                        updatedAt: serverTimestamp()
+                    });
+                } else {
+                    console.warn(`Original item ${item.originalItemId} deleted.`);
+                }
+            } catch (e) {
+                console.error(`Failed to sync item ${item.id}`, e);
+            }
+        });
+
+        await Promise.all(updates);
+        toast({ title: t('syncComplete') || "Sync Complete", description: "Shared items have been updated." });
+    }, [currentUser, db, receivedItems, t]);
+
 
     const handleSave = useCallback(async (id: string, type: 'task' | 'letter' | 'chat' | 'delete-chat', data: any): Promise<boolean> => {
         const isNew = id === 'new';
@@ -1360,14 +1396,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         handleUrgencyChange, handleDateChange, handleReminderChange, handlePriorityChange, handleSaveField,
         calculateDefaultReminder, handleReactivateFromCompleted, handleCleanUp, handleSaveData, handleLoadData,
         handleClearAllData, getItemById, handleExportToExcel, handleImportFromExcel, handleDownloadExcelTemplate,
-        handleAiSuggest, updateReceivedItem, deleteReceivedItem
+        handleAiSuggest, updateReceivedItem, deleteReceivedItem, resyncReceivedItems
     }), [
         isMounted, isLoading, isInitialDataLoading, tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList,
         savedChats, receivedItems, isFirestoreAccessible, isLocalStorageAllowed, handlePermissionResponse, handleSave,
         shareItem, markAsSeen, toggleIsDone, handleDelete, handleBulkDelete, handleUrgencyChange, handleDateChange, handleReminderChange,
         handlePriorityChange, handleSaveField, calculateDefaultReminder, handleReactivateFromCompleted, handleCleanUp,
         handleSaveData, handleLoadData, handleClearAllData, getItemById, handleExportToExcel, handleImportFromExcel,
-        handleDownloadExcelTemplate, handleAiSuggest, updateReceivedItem, deleteReceivedItem,
+        handleDownloadExcelTemplate, handleAiSuggest, updateReceivedItem, deleteReceivedItem, resyncReceivedItems,
         isAutoBackupEnabled, toggleAutoBackup // Add to dependencies
     ]);
 
