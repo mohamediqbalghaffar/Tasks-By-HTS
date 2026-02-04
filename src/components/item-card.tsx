@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CompletionDialog } from '@/components/ui/completion-dialog';
+import { useToast } from "@/hooks/use-toast";
 
 interface ItemCardProps {
     item: Task | ApprovalLetter;
@@ -141,6 +142,17 @@ export const ShareDialog = ({ item, onShare, t }: { item: Task | ApprovalLetter,
 export const ItemCard = React.memo(({ item, isSelected, onCardClick, toggleIsDone, handleDelete, t, getDateFnsLocale, shareItem }: ItemCardProps) => {
     const isTask = 'taskNumber' in item;
     const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+    const { toast } = useToast();
+
+    const handleCopy = (e: React.MouseEvent, text: string, label: string) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        toast({
+            title: t('copied') || "Copied",
+            description: `${label} ${t('copiedToClipboard') || "copied to clipboard"}`,
+            duration: 2000,
+        });
+    };
 
     const handleCheckboxChange = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
@@ -256,9 +268,21 @@ export const ItemCard = React.memo(({ item, isSelected, onCardClick, toggleIsDon
                             <div className="flex items-center justify-end gap-x-2 text-xs text-muted-foreground pr-1">
                                 <span className="truncate">{t((item as ApprovalLetter).sentTo) || (item as ApprovalLetter).sentTo}</span>
                                 <span className="shrink-0">•</span>
-                                <span className="truncate">{t((item as ApprovalLetter).letterType) || (item as ApprovalLetter).letterType}</span>
+                                <span
+                                    className="truncate hover:text-foreground cursor-copy transition-colors"
+                                    onClick={(e) => handleCopy(e, (item as ApprovalLetter).letterType, t('letterType') || "Letter Type")}
+                                    title={t('clickToCopy') || "Click to copy"}
+                                >
+                                    {t((item as ApprovalLetter).letterType) || (item as ApprovalLetter).letterType}
+                                </span>
                                 <span className="shrink-0">•</span>
-                                <span className="font-mono shrink-0">#{(item as ApprovalLetter).letterCode || (item as ApprovalLetter).letterNumber}</span>
+                                <span
+                                    className="font-mono shrink-0 hover:text-foreground cursor-copy transition-colors"
+                                    onClick={(e) => handleCopy(e, ((item as ApprovalLetter).letterCode || (item as ApprovalLetter).letterNumber).toString(), t('letterCode') || "Letter Code")}
+                                    title={t('clickToCopy') || "Click to copy"}
+                                >
+                                    #{(item as ApprovalLetter).letterCode || (item as ApprovalLetter).letterNumber}
+                                </span>
                             </div>
                         </div>
                     </div>
