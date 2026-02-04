@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Label } from '@/components/ui/label';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface CompletionDialogProps {
@@ -18,11 +20,13 @@ export const CompletionDialog = ({
     onConfirm,
     t
 }: CompletionDialogProps) => {
-    const [date, setDate] = useState<string>(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+    const [date, setDate] = useState<Date | undefined>(new Date());
 
     const handleConfirm = () => {
-        onConfirm(new Date(date));
-        onOpenChange(false);
+        if (date) {
+            onConfirm(date);
+            onOpenChange(false);
+        }
     };
 
     return (
@@ -34,12 +38,16 @@ export const CompletionDialog = ({
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="completion-date">{t('completionDate') || 'Completion Date'}</Label>
-                        <Input
-                            id="completion-date"
-                            type="datetime-local"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
+                        <Label>{t('completionDate') || 'Completion Date'}</Label>
+                        <DateTimePicker
+                            date={date}
+                            onSave={(newDate) => setDate(newDate || new Date())}
+                            triggerButton={
+                                <Button variant={"outline"} className="w-full justify-start text-left font-normal mt-1">
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, "PPP p") : <span>{t('selectCompletionDate')}</span>}
+                                </Button>
+                            }
                         />
                     </div>
                 </div>
