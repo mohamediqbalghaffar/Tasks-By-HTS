@@ -149,11 +149,13 @@ export default function Home() {
             let items: Task[] = [];
             if (filterStatus.includes('active')) items.push(...tasks.filter(t => !t.isDone));
             if (filterStatus.includes('expired')) items.push(...expiredTasksList);
+            if (filterStatus.includes('completed')) items.push(...tasks.filter(t => t.isDone));
             baseItems = items;
         } else {
             let items: ApprovalLetter[] = [];
             if (filterStatus.includes('active')) items.push(...approvalLetters.filter(l => !l.isDone));
             if (filterStatus.includes('expired')) items.push(...expiredApprovalLettersList);
+            if (filterStatus.includes('completed')) items.push(...approvalLetters.filter(l => l.isDone));
             baseItems = items;
         }
 
@@ -455,6 +457,10 @@ export default function Home() {
                                             <div className="flex items-center space-x-2 rtl:space-x-reverse">
                                                 <Checkbox id="status-expired" checked={filterStatus.includes('expired')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'expired'] : s.filter(i => i !== 'expired'))} />
                                                 <Label htmlFor="status-expired" className="font-normal">{t('expired')}</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                <Checkbox id="status-completed" checked={filterStatus.includes('completed')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'completed'] : s.filter(i => i !== 'completed'))} />
+                                                <Label htmlFor="status-completed" className="font-normal">{t('filterCompleted')}</Label>
                                             </div>
                                         </div>
                                     </div>

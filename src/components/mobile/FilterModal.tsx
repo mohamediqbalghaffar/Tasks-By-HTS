@@ -172,6 +172,23 @@ export function FilterModal({
                                         {t('expired')}
                                     </Label>
                                 </div>
+                                <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                                    <Checkbox
+                                        id="mobile-status-completed"
+                                        checked={filterStatus.includes('completed')}
+                                        onCheckedChange={(checked) =>
+                                            setFilterStatus(
+                                                checked
+                                                    ? [...filterStatus, 'completed']
+                                                    : filterStatus.filter(s => s !== 'completed')
+                                            )
+                                        }
+                                        className="h-5 w-5"
+                                    />
+                                    <Label htmlFor="mobile-status-completed" className="font-normal text-base py-1 flex-1">
+                                        {t('filterCompleted')}
+                                    </Label>
+                                </div>
                             </div>
                         </div>
 
