@@ -648,6 +648,9 @@ export const translations: Record<Locale, Record<string, string>> = {
 
     "copyText": "کۆپیکردن",
     "copied": "کۆپیکرا",
+    "clickToCopy": "کرتە بکە بۆ کۆپیکردن",
+    "copiedToClipboard": "کۆپیکرا بۆ ڕاگیراو",
+    "itemName": "ناوی ئایتم",
 
 
 

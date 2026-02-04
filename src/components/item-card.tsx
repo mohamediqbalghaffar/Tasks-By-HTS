@@ -192,7 +192,13 @@ export const ItemCard = React.memo(({ item, isSelected, onCardClick, toggleIsDon
                                     </div>
                                 ) : null}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
-                                <p className="font-semibold break-words text-sm truncate" title={item.name}>{item.name}</p>
+                                <p
+                                    className="font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors"
+                                    onClick={(e) => handleCopy(e, item.name, t('itemName') || "Item Name")}
+                                    title={t('clickToCopy') || "Click to copy"}
+                                >
+                                    {item.name}
+                                </p>
                             </div>
                             <p className="text-xs text-muted-foreground break-words truncate pr-1" title={item.detail}>{item.detail}</p>
                         </div>
@@ -262,19 +268,19 @@ export const ItemCard = React.memo(({ item, isSelected, onCardClick, toggleIsDon
                                     </div>
                                 ) : null}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
-                                <p className="font-semibold break-words text-sm truncate" title={item.name}>{item.name}</p>
+                                <p
+                                    className="font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors"
+                                    onClick={(e) => handleCopy(e, item.name, t('itemName') || "Item Name")}
+                                    title={t('clickToCopy') || "Click to copy"}
+                                >
+                                    {item.name}
+                                </p>
                             </div>
 
                             <div className="flex items-center justify-end gap-x-2 text-xs text-muted-foreground pr-1">
                                 <span className="truncate">{t((item as ApprovalLetter).sentTo) || (item as ApprovalLetter).sentTo}</span>
                                 <span className="shrink-0">•</span>
-                                <span
-                                    className="truncate hover:text-foreground cursor-copy transition-colors"
-                                    onClick={(e) => handleCopy(e, (item as ApprovalLetter).letterType, t('letterType') || "Letter Type")}
-                                    title={t('clickToCopy') || "Click to copy"}
-                                >
-                                    {t((item as ApprovalLetter).letterType) || (item as ApprovalLetter).letterType}
-                                </span>
+                                <span className="truncate">{t((item as ApprovalLetter).letterType) || (item as ApprovalLetter).letterType}</span>
                                 <span className="shrink-0">•</span>
                                 <span
                                     className="font-mono shrink-0 hover:text-foreground cursor-copy transition-colors"
