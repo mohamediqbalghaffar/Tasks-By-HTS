@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tasks by HTS - Icon Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2B4C7E;
+            margin-bottom: 30px;
+        }
+        .icon-preview {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .icon-wrapper {
+            text-align: center;
+        }
+        .icon-wrapper h3 {
+            margin-top: 10px;
+            color: #2B4C7E;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #E63946;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #d62839;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tasks by HTS - Icon Generator</h1>
+        <div class="icon-preview">
+            <div class="icon-wrapper">
+                <canvas id="icon512" width="512" height="512"></canvas>
+                <h3>512x512</h3>
+                <button onclick="downloadIcon('icon512', 'icon-512x512.png')">Download 512x512</button>
+            </div>
+            <div class="icon-wrapper">
+                <canvas id="icon192" width="192" height="192"></canvas>
+                <h3>192x192</h3>
+                <button onclick="downloadIcon('icon192', 'icon-192x192.png')">Download 192x192</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function drawIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#f0f2f5';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Calculate proportions
+            const tWidth = size * 0.5;
+            const tHeight = size * 0.6;
+            const strokeWidth = size * 0.12;
+            
+            // Draw the "T" lettermark in Halabja red
+            ctx.fillStyle = '#E63946';
+            
+            // Horizontal bar of T
+            const barY = size * 0.2;
+            const barHeight = strokeWidth;
+            ctx.fillRect(size * 0.25, barY, tWidth, barHeight);
+            
+            // Vertical stem of T
+            const stemX = size * 0.5 - strokeWidth / 2;
+            const stemY = barY;
+            const stemHeight = tHeight;
+            ctx.fillRect(stemX, stemY, strokeWidth, stemHeight);
+            
+            // Draw "by HTS" text
+            const fontSize = size * 0.06;
+            ctx.fillStyle = '#2B4C7E';
+            ctx.font = `${fontSize}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('by HTS', size / 2, size * 0.85);
+        }
+
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Draw both icons on page load
+        drawIcon('icon512', 512);
+        drawIcon('icon192', 192);
+    </script>
+</body>
+</html>
