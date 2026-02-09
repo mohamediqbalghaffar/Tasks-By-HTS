@@ -73,8 +73,8 @@ body {
 
     --muted: 220 10% 90% / 0.7;
     /* Muted light gray */
-    --muted-foreground: 220 10% 40%;
-    /* Darker muted text */
+    --muted-foreground: 220 15% 30%;
+    /* Darker muted text - improved visibility */
 
     --accent: 250 50% 55%;
     /* Using new primary purple as accent */
@@ -156,8 +156,8 @@ body {
 
     --muted: 250 30% 35% / 0.5;
     /* Muted purple for inactive elements */
-    --muted-foreground: 0 0% 80%;
-    /* Slightly dimmer white for muted text */
+    --muted-foreground: 0 0% 85%;
+    /* Brighter white for better visibility */
 
     --accent: 250 50% 55%;
     /* Using new primary purple as accent */
@@ -501,6 +501,32 @@ body {
   background-size: 200% 100%;
   animation: liquid-shimmer 3s linear infinite;
 }
+
+/* Pause animations on hover and touch */
+.liquid-float:hover,
+.liquid-float:active,
+.glass-card:hover .liquid-float,
+.glass-card:active .liquid-float,
+[data-view="mobile"] .liquid-float:active {
+  animation-play-state: paused;
+}
+
+.liquid-glow:hover,
+.liquid-glow:active,
+.glass-card:hover .liquid-glow,
+.glass-card:active .liquid-glow,
+[data-view="mobile"] .liquid-glow:active {
+  animation-play-state: paused;
+}
+
+.liquid-shimmer:hover,
+.liquid-shimmer:active,
+.glass-card:hover .liquid-shimmer,
+.glass-card:active .liquid-shimmer,
+[data-view="mobile"] .liquid-shimmer:active {
+  animation-play-state: paused;
+}
+
 
 
 /* CSS Marquee Animation */
