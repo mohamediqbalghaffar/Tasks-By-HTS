@@ -676,6 +676,33 @@ export const translations: Record<Locale, Record<string, string>> = {
     "noDataInRange": "هیچ داتایەک نییە لەم ماوەیەدا",
     "items": "ئایتمەکان",
 
-  },
+    // Shared Items Enhancements
+    "shared": "هاوبەشکراو",
+    "sharedItems": "بابەتە هاوبەشکراوەکان",
+    "sharedBy": "هاوبەشکراوە لەلایەن",
+    "cancelSharing": "هەڵوەشاندنەوەی هاوبەشکردن",
+    "confirmCancelSharing": "دڵنیای لە هەڵوەشاندنەوەی هاوبەشکردن؟",
+    "cancelSharingDesc": "ئەم بابەتە چیتر بۆ بەکارهێنەری تر نیشان نادرێت",
+    "cancelSharingSuccess": "هاوبەشکردن بە سەرکەوتوویی هەڵوەشێندرایەوە",
+    "errorCancellingShare": "هەڵە لە هەڵوەشاندنەوەی هاوبەشکردن",
+    "lastSeenByOwner": "خاوەن بینیویەتی",
+    "lastSeenByReceiver": "وەرگر بینیویەتی",
+    "notSeenYet": "هێشتا نەبینراوە",
+    "seenJustNow": "ئێستا بینراوە",
+    "viewedBy": "بینراوە لەلایەن",
+    "received": "وەرگیراو",
+    "sent": "نێردراو",
+    "sync": "هاوکاتکردن",
+    "unknownSender": "ناردەری نەناسراو",
+    "itemsCount": "ژمارەی بابەتەکان",
+    "noMutualItems": "هیچ بابەتێکی هاوبەش نییە",
+    "noSentItems": "هیچ بابەتێکی نێردراو نییە",
+    "tasks": "ئەرکەکان",
+    "letters": "نووسراوەکان",
+    "itemAlreadyShared": "ئەم بابەتە پێشتر هاوبەشکراوە",
+    "shareItemDesc": "ئەم بابەتە لەگەڵ بەکارهێنەرێکی تر هاوبەش بکە",
+    "sharedWithUsers": "هاوبەشکراوە لەگەڵ {count} بەکارهێنەر",
+    "filterCompleted": "تەواوکراو",
+    "filterShared": "هاوبەشکراو"
+  }
 };
-

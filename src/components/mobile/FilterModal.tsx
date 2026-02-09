@@ -189,6 +189,23 @@ export function FilterModal({
                                         {t('filterCompleted')}
                                     </Label>
                                 </div>
+                                <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                                    <Checkbox
+                                        id="mobile-status-shared"
+                                        checked={filterStatus.includes('shared')}
+                                        onCheckedChange={(checked) =>
+                                            setFilterStatus(
+                                                checked
+                                                    ? [...filterStatus, 'shared']
+                                                    : filterStatus.filter(s => s !== 'shared')
+                                            )
+                                        }
+                                        className="h-5 w-5"
+                                    />
+                                    <Label htmlFor="mobile-status-shared" className="font-normal text-base py-1 flex-1">
+                                        {t('shared')}
+                                    </Label>
+                                </div>
                             </div>
                         </div>
 

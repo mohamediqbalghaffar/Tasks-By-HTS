@@ -41,7 +41,9 @@ service cloud.firestore {
 
       // Rules for receivedItems (shared tasks/letters)
       match /receivedItems/{itemId} {
-        allow read, update, delete: if isOwner(userId);
+        allow read, update: if isOwner(userId);
+        // Allow delete if owner OR if sender (sender matches senderUid field)
+        allow delete: if isOwner(userId) || (isAuthenticated() && resource.data.senderUid == request.auth.uid);
         allow create: if isAuthenticated() && request.resource.data.senderUid == request.auth.uid;
       }
 

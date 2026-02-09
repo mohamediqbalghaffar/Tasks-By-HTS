@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CompletionDialog } from '@/components/ui/completion-dialog';
+import { SharedWithList } from '@/components/shared-with-list';
 import { useToast } from "@/hooks/use-toast";
 
 interface ItemCardProps {
@@ -23,9 +24,15 @@ interface ItemCardProps {
     t: (key: string) => string;
     getDateFnsLocale: () => any;
     shareItem: (item: Task | ApprovalLetter, code: number, force?: boolean) => Promise<'success' | 'already_shared' | 'user_not_found' | 'error'>;
+    unshareItem?: (itemId: string, itemType: 'task' | 'letter', targetUserId: string) => Promise<boolean>;
 }
 
-export const ShareDialog = ({ item, onShare, t }: { item: Task | ApprovalLetter, onShare: (item: any, code: number, force?: boolean) => Promise<'success' | 'already_shared' | 'user_not_found' | 'error'>, t: any }) => {
+export const ShareDialog = ({ item, onShare, onUnshare, t }: {
+    item: Task | ApprovalLetter,
+    onShare: (item: any, code: number, force?: boolean) => Promise<'success' | 'already_shared' | 'user_not_found' | 'error'>,
+    onUnshare?: (itemId: string, itemType: 'task' | 'letter', targetUserId: string) => Promise<boolean>,
+    t: any
+}) => {
     const [code, setCode] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -51,11 +58,19 @@ export const ShareDialog = ({ item, onShare, t }: { item: Task | ApprovalLetter,
         }
     };
 
+    const itemType = 'taskNumber' in item ? 'task' : 'letter';
+    const hasShares = (item.sharedCount || 0) > 0;
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) { setShowConfirm(false); setPendingCode(null); } }}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary hover:bg-primary/10" onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}>
                     <Share2 className="h-4 w-4" />
+                    {hasShares && (
+                        <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
+                            {item.sharedCount}
+                        </span>
+                    )}
                 </Button>
             </DialogTrigger>
             <DialogContent onClick={(e) => e.stopPropagation()} className="sm:max-w-md">
@@ -68,6 +83,16 @@ export const ShareDialog = ({ item, onShare, t }: { item: Task | ApprovalLetter,
                             <DialogTitle className="text-center text-xl">{t('share')}</DialogTitle>
                             <DialogDescription className="text-center">{t('shareItemDesc')}</DialogDescription>
                         </DialogHeader>
+
+                        {/* Show shared users list if item has shares */}
+                        {hasShares && onUnshare && (
+                            <SharedWithList
+                                itemId={item.id}
+                                itemType={itemType}
+                                onUnshare={onUnshare}
+                            />
+                        )}
+
                         <div className="py-6 space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="share-code" className="text-sm font-medium">{t('shareCode')}</Label>
@@ -146,7 +171,8 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
     handleDelete,
     t,
     getDateFnsLocale,
-    shareItem
+    shareItem,
+    unshareItem
 }) => {
     const isTask = 'taskNumber' in item;
     const [showCompletionDialog, setShowCompletionDialog] = useState(false);
@@ -193,10 +219,17 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                         <div className="flex-grow space-y-0.5 text-right min-w-0">
                             <div className="flex justify-end items-center gap-2">
                                 {/* Shared Indicator */}
-                                {item.sharedCount && item.sharedCount > 0 ? (
-                                    <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0" title={t('sharedTimes') + ': ' + item.sharedCount}>
+                                {/* Shared Indicator */}
+                                {(item.sharedCount && item.sharedCount > 0) || (item as any)._isShared ? (
+                                    <div className={cn(
+                                        "flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full shrink-0",
+                                        (item as any)._isShared ? "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" : "text-primary bg-primary/10"
+                                    )} title={(item as any)._isShared ? t('sharedWithMe') : t('sharedTimes') + ': ' + item.sharedCount}>
                                         <Users className="h-3 w-3" />
-                                        <span>{item.sharedCount}</span>
+                                        {(item.sharedCount && item.sharedCount > 0) && !((item as any)._isShared) && <span>{item.sharedCount}</span>}
+                                        {(item as any)._isShared && !(item as any)._seenAt && (
+                                            <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+                                        )}
                                     </div>
                                 ) : null}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
@@ -242,7 +275,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
-                        <ShareDialog item={item} onShare={shareItem} t={t} />
+                        <ShareDialog item={item} onShare={shareItem} onUnshare={unshareItem} t={t} />
                         <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 pt-1">
                             <span>{format(item.createdAt, 'dd/MM/yyyy')}</span>
                             <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
@@ -269,10 +302,17 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                         <div className="flex-grow space-y-1 text-right min-w-0">
                             <div className="flex justify-end items-center gap-2">
                                 {/* Shared Indicator */}
-                                {item.sharedCount && item.sharedCount > 0 ? (
-                                    <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0" title={t('sharedTimes') + ': ' + item.sharedCount}>
+                                {/* Shared Indicator */}
+                                {(item.sharedCount && item.sharedCount > 0) || (item as any)._isShared ? (
+                                    <div className={cn(
+                                        "flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full shrink-0",
+                                        (item as any)._isShared ? "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" : "text-primary bg-primary/10"
+                                    )} title={(item as any)._isShared ? t('sharedWithMe') : t('sharedTimes') + ': ' + item.sharedCount}>
                                         <Users className="h-3 w-3" />
-                                        <span>{item.sharedCount}</span>
+                                        {(item.sharedCount && item.sharedCount > 0) && !((item as any)._isShared) && <span>{item.sharedCount}</span>}
+                                        {(item as any)._isShared && !(item as any)._seenAt && (
+                                            <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+                                        )}
                                     </div>
                                 ) : null}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}

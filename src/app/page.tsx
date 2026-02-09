@@ -19,7 +19,7 @@ import { ListTodo, FileText, PanelRight, PanelLeft, AlertTriangle, ChevronsLeft,
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isAfter, isBefore, isWithinInterval, formatDistanceToNowStrict } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Task, ApprovalLetter } from '@/contexts/LanguageContext';
+import { Task, ApprovalLetter, ReceivedItem } from '@/contexts/LanguageContext';
 import { renderDetailContent } from '@/lib/render-detail-content';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -60,7 +60,10 @@ export default function Home() {
         handleUrgencyChange,
         calculateDefaultReminder,
         handleDateChange,
-        handleSaveField
+        handleSaveField,
+        receivedItems,
+        unshareItem,
+        markAsSeen
     } = useTask();
 
     const {
@@ -140,6 +143,14 @@ export default function Home() {
         if (!isDetailViewOpen) {
             setIsDetailViewOpen(true);
         }
+
+        // Mark as seen if it's a shared item
+        if ((item as any)._isShared) {
+            const receivedItem = receivedItems.find(r => r.id === item.id);
+            if (receivedItem) {
+                markAsSeen(receivedItem);
+            }
+        }
     };
 
     const departmentOptions = ['sentTo_chairman', 'sentTo_ceo', 'sentTo_hr', 'sentTo_accounting', 'sentTo_supply_chain', 'sentTo_equipment', 'sentTo_office_slemani', 'sentTo_office_kirkuk', 'sentTo_office_diyala'];
@@ -148,7 +159,7 @@ export default function Home() {
 
 
     const itemsToDisplay = useMemo(() => {
-        let baseItems: (Task | ApprovalLetter)[];
+        let baseItems: (Task | ApprovalLetter)[] = [];
         if (showTasks) {
             let items: Task[] = [];
             if (filterStatus.includes('active')) items.push(...tasks.filter(t => !t.isDone));
@@ -161,6 +172,41 @@ export default function Home() {
             if (filterStatus.includes('expired')) items.push(...expiredApprovalLettersList);
             if (filterStatus.includes('completed')) items.push(...approvalLetters.filter(l => l.isDone));
             baseItems = items;
+        }
+
+        // Add shared items
+        if (filterStatus.includes('shared')) {
+            const sharedItemsMapped = receivedItems
+                .filter(item => {
+                    // Check type match
+                    const isTaskItem = item.originalItemType === 'task' || 'taskNumber' in item.data;
+                    return showTasks ? isTaskItem : !isTaskItem;
+                })
+                .map(item => {
+                    // Create a base object with all required properties
+                    const data = item.data as any;
+                    return {
+                        ...data,
+                        id: item.id,
+                        // Add shared metadata
+                        _isShared: true,
+                        _senderName: item.senderName,
+                        _senderPhotoURL: item.senderPhotoURL,
+                        _sharedAt: item.sharedAt?.toDate ? item.sharedAt.toDate() : new Date(),
+                        _seenAt: item.seenAt?.toDate ? item.seenAt.toDate() : undefined,
+                        // Ensure Date objects
+                        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+                        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+                        startTime: data.startTime ? new Date(data.startTime) : new Date(),
+                        reminder: data.reminder ? new Date(data.reminder) : null,
+                        originalReminder: data.originalReminder ? new Date(data.originalReminder) : null,
+                        completedAt: data.completedAt ? new Date(data.completedAt) : null,
+                        // Ensure required fields
+                        priority: data.priority || 5
+                    } as Task | ApprovalLetter;
+                });
+
+            baseItems = [...baseItems, ...sharedItemsMapped];
         }
 
         let filteredItems = baseItems.filter(item => {
@@ -466,6 +512,10 @@ export default function Home() {
                                                 <Checkbox id="status-completed" checked={filterStatus.includes('completed')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'completed'] : s.filter(i => i !== 'completed'))} />
                                                 <Label htmlFor="status-completed" className="font-normal">{t('filterCompleted')}</Label>
                                             </div>
+                                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                <Checkbox id="status-shared" checked={filterStatus.includes('shared')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'shared'] : s.filter(i => i !== 'shared'))} />
+                                                <Label htmlFor="status-shared" className="font-normal">{t('shared')}</Label>
+                                            </div>
                                         </div>
                                     </div>
                                     <Separator />
@@ -711,6 +761,7 @@ export default function Home() {
                             shareItem={shareItem}
                             t={t}
                             getDateFnsLocale={getDateFnsLocale}
+                            unshareItem={unshareItem}
                         />
                     )) : (
                         <div className="text-center py-10 text-muted-foreground">
@@ -735,7 +786,7 @@ export default function Home() {
                             <CardDescription className="text-xs">
                             </CardDescription>
                         </div>
-                        <ShareDialog item={selectedItem} onShare={shareItem} t={t} />
+                        <ShareDialog item={selectedItem} onShare={shareItem} onUnshare={unshareItem} t={t} />
                     </div>
                 ) : <div></div>}
                 <Button variant="ghost" size="icon" onClick={() => setIsDetailViewOpen(false)}>

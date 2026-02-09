@@ -131,6 +131,7 @@ export interface ReceivedItem {
     senderPhotoURL?: string | null;
     sharedAt: Timestamp;
     originalOwnerUid: string;
+    seenAt?: Timestamp | null;
 }
 
 interface TaskContextType {
@@ -156,6 +157,7 @@ interface TaskContextType {
     // Data functions
     handleSave: (id: string, type: 'task' | 'letter' | 'chat' | 'delete-chat', data: any) => Promise<boolean>;
     shareItem: (item: Task | ApprovalLetter, targetShareCode: number, force?: boolean) => Promise<'success' | 'already_shared' | 'user_not_found' | 'error'>;
+    unshareItem: (itemId: string, itemType: 'task' | 'letter', targetUserId: string) => Promise<boolean>;
     toggleIsDone: (id: string, type: 'task' | 'letter', completionDate?: Date) => void;
     handleDelete: (id: string, type: 'task' | 'letter') => Promise<void>;
     markAsSeen: (item: ReceivedItem) => Promise<void>;
@@ -384,6 +386,51 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [currentUser, userProfile, t]);
 
+    const unshareItem = useCallback(async (itemId: string, itemType: 'task' | 'letter', targetUserId: string): Promise<boolean> => {
+        if (!currentUser || !db) return false;
+
+        try {
+            const sourceCollection = itemType === 'task' ? 'tasks' : 'approvalLetters';
+
+            // 1. Remove from shares subcollection
+            const shareDocRef = doc(db, 'users', currentUser.uid, sourceCollection, itemId, 'shares', targetUserId);
+            await deleteDoc(shareDocRef);
+
+            // 2. Find and remove from target user's receivedItems
+            const receivedItemsRef = collection(db, 'users', targetUserId, 'receivedItems');
+            const q = query(receivedItemsRef, where('originalItemId', '==', itemId), where('originalOwnerUid', '==', currentUser.uid));
+            const querySnapshot = await getDocs(q);
+
+            const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(deletePromises);
+
+            // 3. Decrement sharedCount on the item
+            const itemRef = doc(db, 'users', currentUser.uid, sourceCollection, itemId);
+            const itemSnap = await getDoc(itemRef);
+
+            if (itemSnap.exists()) {
+                const currentSharedCount = itemSnap.data().sharedCount || 0;
+                await updateDoc(itemRef, {
+                    sharedCount: Math.max(0, currentSharedCount - 1),
+                    updatedAt: serverTimestamp()
+                });
+            }
+
+            toast({
+                title: t('cancelSharingSuccess'),
+                description: t('cancelSharingDesc')
+            });
+
+            return true;
+
+        } catch (error) {
+            console.error("Error unsharing item:", error);
+            toast({ title: t('errorCancellingShare'), description: String(error), variant: 'destructive' });
+            return false;
+        }
+    }, [currentUser, t]);
+
+
     const markAsSeen = useCallback(async (item: ReceivedItem) => {
         if (!currentUser || !db || !item.originalOwnerUid || !item.originalItemId) return;
 
@@ -397,6 +444,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             await updateDoc(shareDocRef, {
                 lastSeen: serverTimestamp()
             });
+
+            // Also update the receiver's copy to mark as seen locally
+            // This allows tracking "unread" status on the receiver side
+            // Only update if seenAt is not already set to avoid unnecessary writes
+            if (!item.seenAt) {
+                const receivedItemRef = doc(db, 'users', currentUser.uid, 'receivedItems', item.id);
+                await updateDoc(receivedItemRef, {
+                    seenAt: serverTimestamp()
+                });
+            }
         } catch (error) {
             console.error("Error marking item as seen:", error);
             // We don't toast error here to avoid annoying user if network fails silently or permission issue
@@ -1414,7 +1471,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         toggleAutoBackup,
         setTasks,
         setApprovalLetters,
-        handlePermissionResponse, handleSave, shareItem, markAsSeen, toggleIsDone, handleDelete, handleBulkDelete,
+        handlePermissionResponse, handleSave, shareItem, unshareItem, markAsSeen, toggleIsDone, handleDelete, handleBulkDelete,
         handleUrgencyChange, handleDateChange, handleReminderChange, handlePriorityChange, handleSaveField,
         calculateDefaultReminder, handleReactivateFromCompleted, handleCleanUp, handleSaveData, handleLoadData,
         handleClearAllData, getItemById, handleExportToExcel, handleImportFromExcel, handleDownloadExcelTemplate,
@@ -1422,7 +1479,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }), [
         isMounted, isLoading, isInitialDataLoading, tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList,
         savedChats, receivedItems, isFirestoreAccessible, isLocalStorageAllowed, handlePermissionResponse, handleSave,
-        shareItem, markAsSeen, toggleIsDone, handleDelete, handleBulkDelete, handleUrgencyChange, handleDateChange, handleReminderChange,
+        shareItem, unshareItem, markAsSeen, toggleIsDone, handleDelete, handleBulkDelete, handleUrgencyChange, handleDateChange, handleReminderChange,
         handlePriorityChange, handleSaveField, calculateDefaultReminder, handleReactivateFromCompleted, handleCleanUp,
         handleSaveData, handleLoadData, handleClearAllData, getItemById, handleExportToExcel, handleImportFromExcel,
         handleDownloadExcelTemplate, handleAiSuggest, updateReceivedItem, deleteReceivedItem, resyncReceivedItems,

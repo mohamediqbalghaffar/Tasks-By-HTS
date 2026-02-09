@@ -34,7 +34,15 @@ export interface DetailActions {
 }
 
 export const renderDetailContent = (
-    item: (Task | ApprovalLetter) & { senderName?: string, senderPhotoURL?: string, senderUid?: string },
+    item: (Task | ApprovalLetter) & {
+        senderName?: string,
+        senderPhotoURL?: string,
+        senderUid?: string,
+        _isShared?: boolean,
+        _senderName?: string,
+        _senderPhotoURL?: string,
+        _sharedAt?: Date
+    },
     actions: DetailActions,
     t: (key: string, params?: any) => string,
     getDateFnsLocale: () => any
@@ -58,23 +66,36 @@ export const renderDetailContent = (
         });
     };
 
+    const isSharedConfig = item._isShared || item.senderName;
+    const senderName = item._isShared ? item._senderName : item.senderName;
+    const senderPhoto = item._isShared ? item._senderPhotoURL : item.senderPhotoURL;
+    const sharedAt = item._sharedAt; // Or if senderName/senderUid implies sharing but no date?
+
     return (
         <div className="space-y-6" dir="rtl">
-            {item.senderName && (
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border-2 border-background">
-                            <AvatarImage src={item.senderPhotoURL} />
-                            <AvatarFallback>{item.senderName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="text-sm text-muted-foreground">{t('sharedByLabel')}</p>
-                            <p className="font-semibold text-primary">{item.senderName}</p>
+            {isSharedConfig && (
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border-2 border-background">
+                                <AvatarImage src={senderPhoto} />
+                                <AvatarFallback>{senderName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="text-sm text-muted-foreground">{t('sharedBy')}</p>
+                                <p className="font-semibold text-primary">{senderName}</p>
+                            </div>
+                        </div>
+                        <div className="bg-primary/10 p-2 rounded-full">
+                            <Users className="h-5 w-5 text-primary" />
                         </div>
                     </div>
-                    <div className="bg-primary/10 p-2 rounded-full">
-                        <Users className="h-5 w-5 text-primary" />
-                    </div>
+                    {sharedAt && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-2 px-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{formatDistanceStrict(sharedAt, new Date(), { locale: getDateFnsLocale(), addSuffix: true })}</span>
+                        </div>
+                    )}
                 </div>
             )}
 
