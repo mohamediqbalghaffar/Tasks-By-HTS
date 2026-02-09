@@ -259,7 +259,7 @@ export default function AddPage() {
                                             onSave={setNewTaskStartTime}
                                             triggerButton={
                                                 <Button variant={"outline"} className={cn("flex justify-between items-center text-right font-normal w-full md:w-[300px]", !newTaskStartTime && "text-muted-foreground")}>
-                                                    <span>{newTaskStartTime ? format(newTaskStartTime, "dd/MM/yyyy hh:mm a") : t('pickADateAndTime')}</span>
+                                                    <span>{newTaskStartTime ? format(newTaskStartTime, "dd/MM/yyyy") : t('pickADate')}</span>
                                                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                                                 </Button>
                                             }
@@ -377,7 +377,7 @@ export default function AddPage() {
                                             onSave={setNewLetterStartTime}
                                             triggerButton={
                                                 <Button variant={"outline"} className={cn("flex justify-between items-center text-right font-normal w-full md:w-[300px]", !newLetterStartTime && "text-muted-foreground")}>
-                                                    <span>{newLetterStartTime ? format(newLetterStartTime, "dd/MM/yyyy hh:mm a") : t('pickADateAndTime')}</span>
+                                                    <span>{newLetterStartTime ? format(newLetterStartTime, "dd/MM/yyyy") : t('pickADate')}</span>
                                                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                                                 </Button>
                                             }

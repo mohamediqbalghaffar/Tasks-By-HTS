@@ -244,7 +244,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                         </AlertDialog>
                         <ShareDialog item={item} onShare={shareItem} t={t} />
                         <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 pt-1">
-                            <span>{format(item.createdAt, 'dd/MM/yy HH:mm')}</span>
+                            <span>{format(item.createdAt, 'dd/MM/yyyy')}</span>
                             <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                                 {formatDistanceToNowStrict(item.createdAt, { locale: getDateFnsLocale(), addSuffix: true })}
                             </span>
@@ -333,7 +333,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                         </AlertDialog>
                         <ShareDialog item={item} onShare={shareItem} t={t} />
                         <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 pt-1">
-                            <span>{format(item.createdAt, 'dd/MM/yy HH:mm')}</span>
+                            <span>{format(item.createdAt, 'dd/MM/yyyy')}</span>
                             <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
                                 {formatDistanceToNowStrict(item.createdAt, { locale: getDateFnsLocale(), addSuffix: true })}
                             </span>

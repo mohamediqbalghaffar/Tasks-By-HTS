@@ -17,7 +17,7 @@ import LoadingAnimation from '@/components/ui/loading-animation';
 import { useRouter } from 'next/navigation';
 import { ListChecks, CheckCircle, AlertTriangle, BarChartHorizontal } from 'lucide-react';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
-import { subDays, subMonths, isWithinInterval } from 'date-fns';
+import { subDays, subMonths, isWithinInterval, format } from 'date-fns';
 
 const CustomDot = (props: any) => {
     const { cx, cy, payload } = props;
@@ -89,7 +89,7 @@ const KPIDetailModal: React.FC<KPIDetailModalProps> = ({ isOpen, onClose, title,
                                                 <p className="text-sm text-muted-foreground">{item.detail}</p>
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                                {item.createdAt && new Date(item.createdAt).toLocaleDateString()}
+                                                {item.createdAt && format(new Date(item.createdAt), 'dd/MM/yyyy')}
                                             </div>
                                         </div>
                                     </Card>

@@ -45,7 +45,7 @@ export const CompletionDialog = ({
                             triggerButton={
                                 <Button variant={"outline"} className="w-full justify-start text-left font-normal mt-1">
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP p") : <span>{t('selectCompletionDate')}</span>}
+                                    {date ? format(date, "P") : <span>{t('selectCompletionDate')}</span>}
                                 </Button>
                             }
                         />

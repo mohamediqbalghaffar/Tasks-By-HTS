@@ -214,7 +214,7 @@ export const renderDetailContent = (
                                 triggerButton={
                                     <Button variant={"outline"} className="w-full justify-start text-left font-normal mt-1">
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {item.startTime ? format(item.startTime, 'PPP p', { locale: getDateFnsLocale() }) : <span>{t('pickADate')}</span>}
+                                        {item.startTime ? format(item.startTime, 'P', { locale: getDateFnsLocale() }) : <span>{t('pickADate')}</span>}
                                     </Button>
                                 }
                             />
