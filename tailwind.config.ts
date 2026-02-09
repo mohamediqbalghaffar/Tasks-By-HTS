@@ -87,26 +87,30 @@ export default {
 				},
 				'liquid-float': {
 					'0%, 100%': {
-						transform: 'translateY(0px)'
+						transform: 'translateY(0px) rotate(0deg)'
 					},
 					'50%': {
-						transform: 'translateY(-4px)'
+						transform: 'translateY(-6px) rotate(0.5deg)'
 					}
 				},
 				'liquid-glow': {
 					'0%, 100%': {
-						boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 2px 8px 0 rgba(0, 0, 0, 0.05)'
+						boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.1), 0 2px 8px 0 rgba(0, 0, 0, 0.05)',
+						borderColor: 'rgba(255, 255, 255, 0.3)'
 					},
 					'50%': {
-						boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.25), 0 12px 48px 0 rgba(0, 0, 0, 0.15), 0 4px 16px 0 rgba(0, 0, 0, 0.1)'
+						boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 12px 48px 0 rgba(0, 0, 0, 0.15), 0 4px 16px 0 rgba(0, 0, 0, 0.1)',
+						borderColor: 'rgba(255, 255, 255, 0.5)'
 					}
 				},
 				'liquid-shimmer': {
 					'0%': {
-						backgroundPosition: '-200% center'
+						backgroundPosition: '-200% center',
+						opacity: '0.5'
 					},
 					'100%': {
-						backgroundPosition: '200% center'
+						backgroundPosition: '200% center',
+						opacity: '0.8'
 					}
 				},
 				'spring-bounce': {
@@ -124,7 +128,7 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'liquid-float': 'liquid-float 3s ease-in-out infinite',
+				'liquid-float': 'liquid-float 6s ease-in-out infinite',
 				'liquid-glow': 'liquid-glow 4s ease-in-out infinite',
 				'liquid-shimmer': 'liquid-shimmer 3s linear infinite',
 				'spring-bounce': 'spring-bounce 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
