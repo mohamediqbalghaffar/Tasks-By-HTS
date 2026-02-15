@@ -64,7 +64,7 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) { setShowConfirm(false); setPendingCode(null); } }}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary hover:bg-primary/10" onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-primary hover:text-primary hover:bg-primary/10" onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}>
                     <Share2 className="h-4 w-4" />
                     {hasShares && (
                         <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
@@ -77,11 +77,11 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                 {!showConfirm ? (
                     <>
                         <DialogHeader>
-                            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                                <Share2 className="h-6 w-6 text-primary" />
+                            <div className="mx-auto w-14 h-14 rounded-full bg-primary/20 dark:bg-primary/30 flex items-center justify-center mb-4">
+                                <Share2 className="h-7 w-7 text-primary dark:text-primary" />
                             </div>
-                            <DialogTitle className="text-center text-xl">{t('share')}</DialogTitle>
-                            <DialogDescription className="text-center">{t('shareItemDesc')}</DialogDescription>
+                            <DialogTitle className="text-center text-2xl font-bold text-foreground">{t('share')}</DialogTitle>
+                            <DialogDescription className="text-center text-base text-foreground/80 dark:text-foreground/90">{t('shareItemDesc')}</DialogDescription>
                         </DialogHeader>
 
                         {/* Show shared users list if item has shares */}
@@ -94,8 +94,8 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                         )}
 
                         <div className="py-6 space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="share-code" className="text-sm font-medium">{t('shareCode')}</Label>
+                            <div className="space-y-3">
+                                <Label htmlFor="share-code" className="text-sm font-semibold text-foreground">{t('shareCode')}</Label>
                                 <div className="relative">
                                     <Input
                                         id="share-code"
@@ -103,21 +103,27 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                                         value={code}
                                         onChange={e => setCode(e.target.value)}
                                         placeholder="e.g. 12345"
-                                        className="pl-10 text-lg tracking-wide"
+                                        className="pl-11 pr-4 h-12 text-lg font-medium tracking-wide border-2 focus:border-primary bg-background text-foreground placeholder:text-muted-foreground/60"
                                         autoFocus
                                     />
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                        <Users className="h-4 w-4" />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/60">
+                                        <Users className="h-5 w-5" />
                                     </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground">{t('shareCodeHint')}</p>
+                                <p className="text-sm text-foreground/70 dark:text-foreground/80">{t('shareCodeHint')}</p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
+                        <div className="flex gap-3">
+                            <Button
+                                variant="outline"
+                                className="w-full min-h-[44px] sm:min-h-[40px] text-base font-semibold border-2 hover:bg-muted/50"
+                                onClick={() => setIsOpen(false)}
+                            >
+                                {t('cancel')}
+                            </Button>
                             <Button
                                 onClick={() => handleShare(false)}
-                                className="w-full"
+                                className="w-full min-h-[44px] sm:min-h-[40px] text-base font-semibold bg-primary hover:bg-primary/90"
                                 disabled={!code || isLoading}
                             >
                                 {isLoading ? (
@@ -132,19 +138,25 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                 ) : (
                     <>
                         <DialogHeader>
-                            <div className="mx-auto w-12 h-12 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center mb-4">
-                                <AlertTriangle className="h-6 w-6" />
+                            <div className="mx-auto w-14 h-14 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-600 dark:text-yellow-500 flex items-center justify-center mb-4">
+                                <AlertTriangle className="h-7 w-7" />
                             </div>
-                            <DialogTitle className="text-center text-xl">{t('alreadySharedTitle') || 'Already Shared'}</DialogTitle>
-                            <DialogDescription className="text-center">
+                            <DialogTitle className="text-center text-2xl font-bold text-foreground">{t('alreadySharedTitle') || 'Already Shared'}</DialogTitle>
+                            <DialogDescription className="text-center text-base text-foreground/80 dark:text-foreground/90">
                                 {t('alreadySharedDesc') || 'This item has already been shared with this user. Do you want to share it again?'}
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="flex gap-2 mt-4">
-                            <Button variant="outline" className="w-full" onClick={() => { setShowConfirm(false); setPendingCode(null); }}>{t('cancel')}</Button>
+                        <div className="flex gap-3 mt-6">
+                            <Button
+                                variant="outline"
+                                className="w-full min-h-[44px] sm:min-h-[40px] text-base font-semibold border-2 hover:bg-muted/50"
+                                onClick={() => { setShowConfirm(false); setPendingCode(null); }}
+                            >
+                                {t('cancel')}
+                            </Button>
                             <Button
                                 onClick={() => handleShare(true)}
-                                className="w-full"
+                                className="w-full min-h-[44px] sm:min-h-[40px] text-base font-semibold bg-primary hover:bg-primary/90"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
@@ -371,7 +383,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
-                        <ShareDialog item={item} onShare={shareItem} t={t} />
+                        <ShareDialog item={item} onShare={shareItem} onUnshare={unshareItem} t={t} />
                         <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 pt-1">
                             <span>{format(item.createdAt, 'dd/MM/yyyy')}</span>
                             <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">

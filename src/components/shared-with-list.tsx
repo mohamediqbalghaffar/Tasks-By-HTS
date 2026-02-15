@@ -47,23 +47,23 @@ const SharedUserItem: React.FC<{
     };
 
     return (
-        <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
+        <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 border border-transparent hover:border-border/50">
             <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8 border">
+                <Avatar className="h-9 w-9 border-2">
                     <AvatarImage src={user.photoURL} />
-                    <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="font-semibold">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-sm font-semibold leading-none text-foreground">{user.name}</p>
+                    <p className="text-xs text-foreground/70 dark:text-foreground/80 mt-1.5">
                         {user.sharedAt?.toDate ? formatDistanceToNow(user.sharedAt.toDate(), { addSuffix: true, locale: getDateFnsLocale() }) : 'Just now'}
                     </p>
                 </div>
             </div>
             <div className="flex items-center gap-2">
                 {user.lastSeen?.toDate && (
-                    <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-full">
-                        <Eye className="h-3 w-3" />
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-1.5 rounded-full">
+                        <Eye className="h-3.5 w-3.5" />
                         <span>{formatDistanceToNow(user.lastSeen.toDate(), { addSuffix: true, locale: getDateFnsLocale() })}</span>
                     </div>
                 )}
@@ -71,7 +71,7 @@ const SharedUserItem: React.FC<{
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-9 min-h-[36px] sm:h-8 sm:min-h-[32px] text-xs font-semibold px-3 text-destructive hover:text-destructive hover:bg-destructive/15 border border-transparent hover:border-destructive/20"
                         onClick={handleUnshare}
                         disabled={isUnsharing}
                     >
@@ -109,8 +109,8 @@ export const SharedWithList: React.FC<SharedWithListProps> = ({ itemId, itemType
     if (sharedUsers.length === 0) return null;
 
     return (
-        <div className="mt-6 border rounded-lg p-4 bg-card">
-            <h4 className="flex items-center gap-2 font-semibold text-sm mb-3 text-muted-foreground">
+        <div className="mt-6 border-2 rounded-lg p-4 bg-card">
+            <h4 className="flex items-center gap-2 font-bold text-sm mb-4 text-foreground/80">
                 <Users className="h-4 w-4" />
                 {t('sharedWith')}
             </h4>
