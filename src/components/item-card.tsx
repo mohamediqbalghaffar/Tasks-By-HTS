@@ -209,18 +209,30 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
     };
 
 
+    const priorityColor = item.priority <= 3
+        ? 'from-emerald-400 to-green-500'
+        : item.priority <= 6
+            ? 'from-amber-400 to-orange-500'
+            : 'from-rose-400 to-red-600';
+
     return (
         <Card
             onClick={() => onCardClick(item)}
             className={cn(
-                "cursor-pointer transition-all hover:bg-muted/80 relative group",
-                isSelected ? "bg-muted border-primary" : "bg-card",
+                "cursor-pointer transition-all hover:shadow-lg relative group overflow-hidden",
+                isSelected
+                    ? "ring-2 ring-primary shadow-md shadow-primary/20"
+                    : "hover:-translate-y-0.5",
                 item.isUrgent && !item.isDone && "urgent-pulse-glow",
-                item.reminder && !item.isDone && new Date(item.reminder) < new Date() && "expired-pulse-glow"
+                item.reminder && !item.isDone && new Date(item.reminder) < new Date() && "expired-pulse-glow",
+                item.isDone && "opacity-60"
             )}
         >
+            {/* Priority color bar on left */}
+            <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-md bg-gradient-to-b", priorityColor)} />
+
             {isTask ? (
-                <CardContent className="p-3 flex items-start justify-between gap-4">
+                <CardContent className="p-3 pl-5 flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-grow min-w-0">
                         <Checkbox
                             checked={item.isDone}
@@ -246,7 +258,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                 ) : null}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
                                 <p
-                                    className="font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors"
+                                    className={cn("font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors", item.isDone && "line-through text-muted-foreground")}
                                     onClick={(e) => handleCopy(e, item.name, t('itemName') || "Item Name")}
                                     title={t('clickToCopy') || "Click to copy"}
                                 >
@@ -303,7 +315,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                     />
                 </CardContent>
             ) : (
-                <CardContent className="p-3 flex items-start justify-between gap-4">
+                <CardContent className="p-3 pl-5 flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-grow min-w-0">
                         <Checkbox
                             checked={item.isDone}
@@ -329,7 +341,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                 ) : null}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
                                 <p
-                                    className="font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors"
+                                    className={cn("font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors", item.isDone && "line-through text-muted-foreground")}
                                     onClick={(e) => handleCopy(e, item.name, t('itemName') || "Item Name")}
                                     title={t('clickToCopy') || "Click to copy"}
                                 >

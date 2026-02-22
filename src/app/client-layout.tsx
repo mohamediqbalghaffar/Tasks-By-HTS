@@ -10,7 +10,7 @@ import { TaskProvider, useTask } from '@/contexts/TaskContext';
 import { useEffect, useState } from 'react';
 import * as React from 'react';
 import LoadingAnimation from '@/components/ui/loading-animation';
-import { User2, Settings2, PlusCircle, ListTodo, FileText, ChevronRight, LogOut, AlignLeft, AlignRight, Brain, Loader2 } from 'lucide-react';
+import { User2, Settings2, PlusCircle, ListTodo, FileText, ChevronRight, LogOut, AlignLeft, AlignRight, Brain, Loader2, BarChart3, Archive, LayoutDashboard, GitMerge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -42,8 +42,8 @@ function ProfileSection() {
     if (!currentUser || !userProfile) {
         return (
             <Link href="/auth">
-                <button className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl">
-                    <User2 className="h-6 w-6" />
+                <button className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-white hover:scale-105 transition-all shadow-lg">
+                    <User2 className="h-5 w-5" />
                 </button>
             </Link>
         );
@@ -53,9 +53,9 @@ function ProfileSection() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group">
+                <button className="w-full flex items-center gap-2 p-2 rounded-xl hover:bg-white/10 transition-colors group">
                     {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
                         {(userProfile as any).profilePictureUrl ? (
                             <img
                                 src={(userProfile as any).profilePictureUrl}
@@ -69,16 +69,16 @@ function ProfileSection() {
 
                     {/* User Info */}
                     <div className="flex-1 text-right overflow-hidden">
-                        <p className="text-sm font-semibold text-foreground truncate">
+                        <p className="text-xs font-semibold text-white truncate">
                             {userProfile.name}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-[10px] text-white/50 truncate">
                             {userProfile.companyName}
                         </p>
                     </div>
 
                     {/* Chevron */}
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
+                    <ChevronRight className="h-3 w-3 text-white/40 group-hover:text-white/70 transition-colors flex-shrink-0" />
                 </button>
             </DropdownMenuTrigger>
 
@@ -185,10 +185,10 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     const navLinks = [
-        { href: '/', label: t('home') },
-        { href: '/archives', label: t('archives') },
-        { href: '/data-analysis', label: t('dataAnalysis') },
-        { href: '/mutual', label: t('mutualItems') },
+        { href: '/', label: t('home'), icon: LayoutDashboard },
+        { href: '/archives', label: t('archives'), icon: Archive },
+        { href: '/data-analysis', label: t('dataAnalysis'), icon: BarChart3 },
+        { href: '/mutual', label: t('mutualItems'), icon: GitMerge },
     ];
 
     const handleAddClick = () => {
@@ -218,17 +218,37 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
 
     // Desktop Layout
     return (
-        <div className="flex h-screen bg-muted/20">
-            <aside className="w-40 flex-shrink-0 flex flex-col items-center gap-y-6 py-5 bg-card border-r">
-                {/* Split Add button */}
-                <div className="w-full px-4 flex justify-center">
+        <div className="flex h-screen" style={{ background: 'linear-gradient(135deg, #f0f2f8 0%, #e8eaf6 50%, #f3e8ff 100%)' }}>
+            {/* Sidebar */}
+            <aside
+                className="w-48 flex-shrink-0 flex flex-col items-center py-5 relative overflow-hidden"
+                style={{
+                    background: 'linear-gradient(180deg, #1a1040 0%, #2d1b69 35%, #0f2454 70%, #0a1628 100%)',
+                    boxShadow: '4px 0 32px rgba(0,0,0,0.3)',
+                }}
+            >
+                {/* Decorative glow orb */}
+                <div className="absolute top-0 left-0 w-full h-48 opacity-20 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, #7c3aed 0%, transparent 70%)' }} />
+                <div className="absolute bottom-0 right-0 w-32 h-32 opacity-10 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 100% 100%, #06b6d4 0%, transparent 70%)' }} />
+
+                {/* Brand Logo */}
+                <div className="w-full px-4 mb-6 flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white text-xl shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 4px 20px rgba(124,58,237,0.5)' }}>
+                        T
+                    </div>
+                    <span className="text-white/60 text-[10px] font-medium tracking-widest uppercase">by HTS</span>
+                </div>
+
+                {/* New Item Button */}
+                <div className="w-full px-3 mb-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
-                                variant="default"
-                                className="w-full h-16 btn-gradient rounded-lg text-lg font-bold flex items-center justify-center gap-2"
+                                className="w-full h-10 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 border-0 text-white shadow-lg"
+                                style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 4px 16px rgba(124,58,237,0.4)' }}
                             >
-                                {t('newItem')} <PlusCircle className="h-5 w-5" />
+                                <PlusCircle className="h-4 w-4" /> {t('newItem')}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56" align="center">
@@ -251,24 +271,38 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex flex-col items-center gap-y-2 flex-grow w-full px-4">
+                <nav className="flex flex-col items-center gap-y-1 flex-grow w-full px-3">
                     {navLinks.map(link => {
                         const isActive = (pathname === '/' && link.href === '/') || (link.href !== '/' && pathname.startsWith(link.href));
+                        const Icon = link.icon;
                         return (
                             <Link key={link.href} href={link.href} className="w-full">
                                 <div className={cn(
-                                    "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors w-full h-12",
-                                    isActive ? "bg-primary text-primary-foreground" : "bg-card hover:bg-muted/50 text-muted-foreground hover:text-card-foreground"
-                                )}>
-                                    <span className="text-sm font-semibold">{link.label}</span>
+                                    "flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 w-full group",
+                                    isActive
+                                        ? "text-white shadow-lg"
+                                        : "text-white/50 hover:text-white/80 hover:bg-white/10"
+                                )}
+                                    style={isActive ? {
+                                        background: 'linear-gradient(135deg, rgba(124,58,237,0.6), rgba(6,182,212,0.4))',
+                                        boxShadow: '0 2px 16px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+                                    } : {}}>
+                                    <Icon className={cn("h-4 w-4 shrink-0 transition-all", isActive ? "text-cyan-300" : "group-hover:text-white/70")} />
+                                    <span className="text-xs font-semibold truncate">{link.label}</span>
+                                    {isActive && <div className="mr-auto w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
                                 </div>
                             </Link>
                         );
                     })}
                 </nav>
 
-                {/* Profile Section - Bottom Left Corner */}
-                <div className="w-full flex justify-center pb-4">
+                {/* Divider */}
+                <div className="w-full px-4 mb-3">
+                    <div className="h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent)' }} />
+                </div>
+
+                {/* Profile Section */}
+                <div className="w-full px-3">
                     <ProfileSection />
                 </div>
             </aside>

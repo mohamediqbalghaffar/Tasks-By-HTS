@@ -1,4 +1,4 @@
-
+﻿
 'use client';
 
 import * as React from 'react';
@@ -415,341 +415,410 @@ export default function Home() {
     // Desktop View - Original layout
 
     const masterView = (
-        <div className="flex flex-col h-full overflow-hidden p-4">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4 shrink-0">
-                <h1 className="text-2xl font-bold">{t('pageTitle')}</h1>
-                <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 hover:border-primary/50 transition-all font-medium">
-                                <FileSpreadsheet className="h-4 w-4 text-primary" />
-                                {t('importExport')}
-                                <ChevronDown className="h-3 w-3 opacity-50" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-60 p-2" align="end">
-                            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground px-2 pb-2">{t('importExport')}</DropdownMenuLabel>
+        <div className="flex flex-col h-full overflow-hidden">
+            {/* Hero Header */}
+            <div className="relative px-6 pt-6 pb-4 shrink-0 overflow-hidden rounded-b-3xl"
+                style={{
+                    background: 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #0f2454 100%)',
+                    boxShadow: '0 4px 32px rgba(0,0,0,0.15)',
+                }}>
+                {/* Decorative orb */}
+                <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full opacity-20 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse, #7c3aed 0%, transparent 70%)' }} />
+                <div className="absolute bottom-0 left-1/4 w-32 h-32 rounded-full opacity-10 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse, #06b6d4 0%, transparent 70%)' }} />
 
-                            <DropdownMenuItem onClick={handleImportClick} className="cursor-pointer py-3 rounded-lg focus:bg-primary/5 focus:text-primary">
-                                <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-500 mr-3">
-                                    <Upload className="h-4 w-4" />
+                <div className="relative flex items-start justify-between">
+                    {/* Title & stats */}
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">{t('pageTitle')}</h1>
+                        <p className="text-white/50 text-xs mt-0.5">{format(new Date(), 'dd/MM/yyyy')}</p>
+                        {/* Quick Stats */}
+                        <div className="flex items-center gap-3 mt-3">
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+                                style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}>
+                                <ListTodo className="h-3.5 w-3.5 text-cyan-300" />
+                                <span>{tasks.filter(t => !t.isDone).length + approvalLetters.filter(l => !l.isDone).length}</span>
+                                <span className="text-white/50">{t('active')}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+                                style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}>
+                                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                                <span>{tasks.filter(t => t.isDone).length + approvalLetters.filter(l => l.isDone).length}</span>
+                                <span className="text-white/50">{t('filterCompleted')}</span>
+                            </div>
+                            {(tasks.filter(t => t.isUrgent && !t.isDone).length + approvalLetters.filter(l => (l as any).isUrgent && !l.isDone).length) > 0 && (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+                                    style={{ background: 'rgba(239,68,68,0.25)', backdropFilter: 'blur(8px)' }}>
+                                    <span className="h-2 w-2 rounded-full bg-rose-400 animate-pulse" />
+                                    <span>{tasks.filter(t => t.isUrgent && !t.isDone).length + approvalLetters.filter(l => (l as any).isUrgent && !l.isDone).length}</span>
+                                    <span className="text-rose-300/70">{t('urgent') || 'Urgent'}</span>
                                 </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="font-medium">{t('importFromExcel')}</span>
-                                    <span className="text-[10px] text-muted-foreground">{t('importFromExcelDesc') || "Upload .xlsx file"}</span>
-                                </div>
-                            </DropdownMenuItem>
+                            )}
+                        </div>
+                    </div>
 
-                            <DropdownMenuItem onClick={handleExportToExcel} className="cursor-pointer py-3 rounded-lg focus:bg-primary/5 focus:text-primary mt-1">
-                                <div className="p-1.5 rounded-md bg-green-500/10 text-green-500 mr-3">
-                                    <Download className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="font-medium">{t('exportToExcel')}</span>
-                                    <span className="text-[10px] text-muted-foreground">{t('exportToExcelDesc') || "Download data as .xlsx"}</span>
-                                </div>
-                            </DropdownMenuItem>
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-1.5 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white">
+                                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                                    {t('importExport')}
+                                    <ChevronDown className="h-3 w-3 opacity-50" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-60 p-2" align="end">
+                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground px-2 pb-2">{t('importExport')}</DropdownMenuLabel>
 
-                            <DropdownMenuSeparator className="my-1" />
-
-                            <DropdownMenuItem onClick={handleDownloadExcelTemplate} className="cursor-pointer py-3 rounded-lg focus:bg-primary/5 focus:text-primary">
-                                <div className="p-1.5 rounded-md bg-orange-500/10 text-orange-500 mr-3">
-                                    <FileSpreadsheet className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="font-medium">{t('downloadExcelTemplate')}</span>
-                                    <span className="text-[10px] text-muted-foreground">{t('downloadExcelTemplateDesc') || "Empty template for new data"}</span>
-                                </div>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <input
-                        type="file"
-                        ref={importInputRef}
-                        className="hidden"
-                        accept=".xlsx, .xls, .csv"
-                        onChange={onImportFileChange}
-                    />
-
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="outline" className="relative">
-                                <Filter className="mr-2 h-4 w-4" />
-                                {t('filters')}
-                                {activeFiltersCount > 0 && (
-                                    <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                                        {activeFiltersCount}
+                                <DropdownMenuItem onClick={handleImportClick} className="cursor-pointer py-3 rounded-lg focus:bg-primary/5 focus:text-primary">
+                                    <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-500 mr-3">
+                                        <Upload className="h-4 w-4" />
                                     </div>
-                                )}
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="p-0 flex flex-col h-full">
-                            <SheetHeader className="p-6 pb-4 text-left border-b shrink-0">
-                                <SheetTitle>{t('filterAndSort')}</SheetTitle>
-                            </SheetHeader>
-                            <ScrollArea className="flex-grow">
-                                <div className="p-6 space-y-6">
-                                    {/* Search */}
-                                    <div>
-                                        <Label htmlFor="search-filter">{t('searchPlaceholder')}</Label>
-                                        <Input id="search-filter" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('searchPlaceholder')} />
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="font-medium">{t('importFromExcel')}</span>
+                                        <span className="text-[10px] text-muted-foreground">{t('importFromExcelDesc') || "Upload .xlsx file"}</span>
                                     </div>
-                                    <Separator />
-                                    {/* Status */}
-                                    <div>
-                                        <Label>{t('status')}</Label>
-                                        <div className="space-y-2 mt-2">
-                                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                                                <Checkbox id="status-active" checked={filterStatus.includes('active')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'active'] : s.filter(i => i !== 'active'))} />
-                                                <Label htmlFor="status-active" className="font-normal">{t('active')}</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                                                <Checkbox id="status-expired" checked={filterStatus.includes('expired')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'expired'] : s.filter(i => i !== 'expired'))} />
-                                                <Label htmlFor="status-expired" className="font-normal">{t('expired')}</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                                                <Checkbox id="status-completed" checked={filterStatus.includes('completed')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'completed'] : s.filter(i => i !== 'completed'))} />
-                                                <Label htmlFor="status-completed" className="font-normal">{t('filterCompleted')}</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                                                <Checkbox id="status-shared" checked={filterStatus.includes('shared')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'shared'] : s.filter(i => i !== 'shared'))} />
-                                                <Label htmlFor="status-shared" className="font-normal">{t('shared')}</Label>
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem onClick={handleExportToExcel} className="cursor-pointer py-3 rounded-lg focus:bg-primary/5 focus:text-primary mt-1">
+                                    <div className="p-1.5 rounded-md bg-green-500/10 text-green-500 mr-3">
+                                        <Download className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="font-medium">{t('exportToExcel')}</span>
+                                        <span className="text-[10px] text-muted-foreground">{t('exportToExcelDesc') || "Download data as .xlsx"}</span>
+                                    </div>
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator className="my-1" />
+
+                                <DropdownMenuItem onClick={handleDownloadExcelTemplate} className="cursor-pointer py-3 rounded-lg focus:bg-primary/5 focus:text-primary">
+                                    <div className="p-1.5 rounded-md bg-orange-500/10 text-orange-500 mr-3">
+                                        <FileSpreadsheet className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="font-medium">{t('downloadExcelTemplate')}</span>
+                                        <span className="text-[10px] text-muted-foreground">{t('downloadExcelTemplateDesc') || "Empty template for new data"}</span>
+                                    </div>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <input
+                            type="file"
+                            ref={importInputRef}
+                            className="hidden"
+                            accept=".xlsx, .xls, .csv"
+                            onChange={onImportFileChange}
+                        />
+
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button variant="outline" size="sm" className="relative gap-1.5 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white">
+                                    <Filter className="h-3.5 w-3.5" />
+                                    {t('filters')}
+                                    {activeFiltersCount > 0 && (
+                                        <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] flex items-center justify-center font-bold">
+                                            {activeFiltersCount}
+                                        </div>
+                                    )}
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="p-0 flex flex-col h-full">
+                                <SheetHeader className="p-6 pb-4 text-left border-b shrink-0">
+                                    <SheetTitle>{t('filterAndSort')}</SheetTitle>
+                                </SheetHeader>
+                                <ScrollArea className="flex-grow">
+                                    <div className="p-6 space-y-6">
+                                        {/* Search */}
+                                        <div>
+                                            <Label htmlFor="search-filter">{t('searchPlaceholder')}</Label>
+                                            <Input id="search-filter" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('searchPlaceholder')} />
+                                        </div>
+                                        <Separator />
+                                        {/* Status */}
+                                        <div>
+                                            <Label>{t('status')}</Label>
+                                            <div className="space-y-2 mt-2">
+                                                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                    <Checkbox id="status-active" checked={filterStatus.includes('active')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'active'] : s.filter(i => i !== 'active'))} />
+                                                    <Label htmlFor="status-active" className="font-normal">{t('active')}</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                    <Checkbox id="status-expired" checked={filterStatus.includes('expired')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'expired'] : s.filter(i => i !== 'expired'))} />
+                                                    <Label htmlFor="status-expired" className="font-normal">{t('expired')}</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                    <Checkbox id="status-completed" checked={filterStatus.includes('completed')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'completed'] : s.filter(i => i !== 'completed'))} />
+                                                    <Label htmlFor="status-completed" className="font-normal">{t('filterCompleted')}</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                    <Checkbox id="status-shared" checked={filterStatus.includes('shared')} onCheckedChange={(checked) => setFilterStatus(s => checked ? [...s, 'shared'] : s.filter(i => i !== 'shared'))} />
+                                                    <Label htmlFor="status-shared" className="font-normal">{t('shared')}</Label>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <Separator />
-                                    {/* Priority */}
-                                    <div>
-                                        <Label>{t('priority')}</Label>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild><Button variant="outline" className="w-full mt-2">{t('selectPriority')} ({filterPriorities.length})</Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent className="w-56">
-                                                <DropdownMenuLabel>{t('priority')}</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                {priorityOptions.map(opt => (
-                                                    <DropdownMenuCheckboxItem key={opt.value} checked={filterPriorities.includes(opt.value)} onCheckedChange={(checked) => setFilterPriorities(p => checked ? [...p, opt.value] : p.filter(i => i !== opt.value))}>
-                                                        {opt.value} - {t(opt.labelKey)}
-                                                    </DropdownMenuCheckboxItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                    <Separator />
-                                    {/* Date Range */}
-                                    <div>
-                                        <Label>{t('dateRange')}</Label>
-                                        <Select value={filterDatePreset} onValueChange={setFilterDatePreset}>
-                                            <SelectTrigger className="w-full mt-2"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">{t('all')}</SelectItem>
-                                                <SelectItem value="today">{t('today')}</SelectItem>
-                                                <SelectItem value="thisWeek">{t('thisWeek')}</SelectItem>
-                                                <SelectItem value="thisMonth">{t('thisMonth')}</SelectItem>
-                                                <SelectItem value="custom">{t('custom')}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {filterDatePreset === 'custom' && (
-                                            <div className="mt-4 grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <Label className="mb-1 block text-xs">{t('from')}</Label>
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant={"outline"}
-                                                                className={cn(
-                                                                    "w-full justify-start text-left font-normal",
-                                                                    !filterCustomDateFrom && "text-muted-foreground"
-                                                                )}
-                                                            >
-                                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {filterCustomDateFrom ? format(filterCustomDateFrom, "dd/MM/yyyy") : <span>{t('pickADate')}</span>}
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0">
-                                                            <WheelDatePicker
-                                                                date={filterCustomDateFrom}
-                                                                setDate={setFilterCustomDateFrom as (date: Date) => void}
-                                                            />
-                                                        </PopoverContent>
-                                                    </Popover>
+                                        <Separator />
+                                        {/* Priority */}
+                                        <div>
+                                            <Label>{t('priority')}</Label>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild><Button variant="outline" className="w-full mt-2">{t('selectPriority')} ({filterPriorities.length})</Button></DropdownMenuTrigger>
+                                                <DropdownMenuContent className="w-56">
+                                                    <DropdownMenuLabel>{t('priority')}</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator />
+                                                    {priorityOptions.map(opt => (
+                                                        <DropdownMenuCheckboxItem key={opt.value} checked={filterPriorities.includes(opt.value)} onCheckedChange={(checked) => setFilterPriorities(p => checked ? [...p, opt.value] : p.filter(i => i !== opt.value))}>
+                                                            {opt.value} - {t(opt.labelKey)}
+                                                        </DropdownMenuCheckboxItem>
+                                                    ))}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                        <Separator />
+                                        {/* Date Range */}
+                                        <div>
+                                            <Label>{t('dateRange')}</Label>
+                                            <Select value={filterDatePreset} onValueChange={setFilterDatePreset}>
+                                                <SelectTrigger className="w-full mt-2"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">{t('all')}</SelectItem>
+                                                    <SelectItem value="today">{t('today')}</SelectItem>
+                                                    <SelectItem value="thisWeek">{t('thisWeek')}</SelectItem>
+                                                    <SelectItem value="thisMonth">{t('thisMonth')}</SelectItem>
+                                                    <SelectItem value="custom">{t('custom')}</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {filterDatePreset === 'custom' && (
+                                                <div className="mt-4 grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <Label className="mb-1 block text-xs">{t('from')}</Label>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button
+                                                                    variant={"outline"}
+                                                                    className={cn(
+                                                                        "w-full justify-start text-left font-normal",
+                                                                        !filterCustomDateFrom && "text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                                    {filterCustomDateFrom ? format(filterCustomDateFrom, "dd/MM/yyyy") : <span>{t('pickADate')}</span>}
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0">
+                                                                <WheelDatePicker
+                                                                    date={filterCustomDateFrom}
+                                                                    setDate={setFilterCustomDateFrom as (date: Date) => void}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    </div>
+                                                    <div>
+                                                        <Label className="mb-1 block text-xs">{t('to')}</Label>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button
+                                                                    variant={"outline"}
+                                                                    className={cn(
+                                                                        "w-full justify-start text-left font-normal",
+                                                                        !filterCustomDateTo && "text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                                    {filterCustomDateTo ? format(filterCustomDateTo, "dd/MM/yyyy") : <span>{t('pickADate')}</span>}
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0">
+                                                                <WheelDatePicker
+                                                                    date={filterCustomDateTo}
+                                                                    setDate={setFilterCustomDateTo as (date: Date) => void}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    </div>
                                                 </div>
+                                            )}
+                                        </div>
+                                        <Separator />
+                                        {/* Letter-specific filters */}
+                                        {!showTasks && (
+                                            <>
                                                 <div>
-                                                    <Label className="mb-1 block text-xs">{t('to')}</Label>
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant={"outline"}
-                                                                className={cn(
-                                                                    "w-full justify-start text-left font-normal",
-                                                                    !filterCustomDateTo && "text-muted-foreground"
-                                                                )}
-                                                            >
-                                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {filterCustomDateTo ? format(filterCustomDateTo, "dd/MM/yyyy") : <span>{t('pickADate')}</span>}
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0">
-                                                            <WheelDatePicker
-                                                                date={filterCustomDateTo}
-                                                                setDate={setFilterCustomDateTo as (date: Date) => void}
-                                                            />
-                                                        </PopoverContent>
-                                                    </Popover>
+                                                    <Label>{t('departments')}</Label>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="outline" className="w-full mt-2">{t('departments')} ({filterDepartments.length})</Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent className="w-56">
+                                                            {departmentOptions.map(opt => (
+                                                                <DropdownMenuCheckboxItem key={opt} checked={filterDepartments.includes(opt)} onCheckedChange={(checked) => setFilterDepartments(d => checked ? [...d, opt] : d.filter(i => i !== opt))}>
+                                                                    {t(opt)}
+                                                                </DropdownMenuCheckboxItem>
+                                                            ))}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
-                                            </div>
+                                                <Separator />
+                                                <div>
+                                                    <Label>{t('letterType')}</Label>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="outline" className="w-full mt-2">{t('letterType')} ({filterLetterTypes.length})</Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent className="w-56">
+                                                            {letterTypeOptions.map(opt => (
+                                                                <DropdownMenuCheckboxItem key={opt} checked={filterLetterTypes.includes(opt)} onCheckedChange={(checked) => setFilterLetterTypes(lt => checked ? [...lt, opt] : lt.filter(i => i !== opt))}>
+                                                                    {t(opt)}
+                                                                </DropdownMenuCheckboxItem>
+                                                            ))}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                                <Separator />
+                                            </>
                                         )}
+                                        {/* Sort By */}
+                                        <div>
+                                            <Label>{t('sortBy')}</Label>
+                                            <Select value={sortOption} onValueChange={setSortOption}>
+                                                <SelectTrigger className="w-full mt-2"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="createdAt_desc">{t('sort_createdAt_desc')}</SelectItem>
+                                                    <SelectItem value="createdAt_asc">{t('sort_createdAt_asc')}</SelectItem>
+                                                    <SelectItem value="priority_desc">{t('sort_priority_desc')}</SelectItem>
+                                                    <SelectItem value="priority_asc">{t('sort_priority_asc')}</SelectItem>
+                                                    <SelectItem value="name_asc">{t('sort_name_asc')}</SelectItem>
+                                                    <SelectItem value="name_desc">{t('sort_name_desc')}</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
-                                    <Separator />
-                                    {/* Letter-specific filters */}
-                                    {!showTasks && (
-                                        <>
-                                            <div>
-                                                <Label>{t('departments')}</Label>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="outline" className="w-full mt-2">{t('departments')} ({filterDepartments.length})</Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent className="w-56">
-                                                        {departmentOptions.map(opt => (
-                                                            <DropdownMenuCheckboxItem key={opt} checked={filterDepartments.includes(opt)} onCheckedChange={(checked) => setFilterDepartments(d => checked ? [...d, opt] : d.filter(i => i !== opt))}>
-                                                                {t(opt)}
-                                                            </DropdownMenuCheckboxItem>
-                                                        ))}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                            <Separator />
-                                            <div>
-                                                <Label>{t('letterType')}</Label>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="outline" className="w-full mt-2">{t('letterType')} ({filterLetterTypes.length})</Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent className="w-56">
-                                                        {letterTypeOptions.map(opt => (
-                                                            <DropdownMenuCheckboxItem key={opt} checked={filterLetterTypes.includes(opt)} onCheckedChange={(checked) => setFilterLetterTypes(lt => checked ? [...lt, opt] : lt.filter(i => i !== opt))}>
-                                                                {t(opt)}
-                                                            </DropdownMenuCheckboxItem>
-                                                        ))}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                            <Separator />
-                                        </>
-                                    )}
-                                    {/* Sort By */}
-                                    <div>
-                                        <Label>{t('sortBy')}</Label>
-                                        <Select value={sortOption} onValueChange={setSortOption}>
-                                            <SelectTrigger className="w-full mt-2"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="createdAt_desc">{t('sort_createdAt_desc')}</SelectItem>
-                                                <SelectItem value="createdAt_asc">{t('sort_createdAt_asc')}</SelectItem>
-                                                <SelectItem value="priority_desc">{t('sort_priority_desc')}</SelectItem>
-                                                <SelectItem value="priority_asc">{t('sort_priority_asc')}</SelectItem>
-                                                <SelectItem value="name_asc">{t('sort_name_asc')}</SelectItem>
-                                                <SelectItem value="name_desc">{t('sort_name_desc')}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                            </ScrollArea>
-                        </SheetContent>
-                    </Sheet>
+                                </ScrollArea>
+                            </SheetContent>
+                        </Sheet>
 
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
-                                {t('actions')} <ChevronDown className="mr-2 h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={resetFilters} disabled={activeFiltersCount === 0}>
-                                <XIcon className="ml-2 h-4 w-4" />
-                                <span>{t('resetFilters')}</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel className="text-xs text-muted-foreground px-2">{t('bulkDelete')}</DropdownMenuLabel>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem
-                                        onSelect={(e) => e.preventDefault()}
-                                        disabled={activeFiltersCount === 0 || itemsToDisplay.length === 0}
-                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                    >
-                                        <Filter className="ml-2 h-4 w-4" />
-                                        <span>
-                                            {activeFiltersCount > 0 && itemsToDisplay.length > 0
-                                                ? t('deleteFilteredItems', { count: itemsToDisplay.length })
-                                                : t('selectFiltersToDelete')}
-                                        </span>
-                                    </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>{t('confirmBulkDeleteTitle')}</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            {t('confirmBulkDeleteDescription', { count: itemsToDisplay.length, type: showTasks ? t('tasksTab') : t('lettersTab') })}
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            onClick={() => handleBulkDelete(itemsToDisplay)}
-                                            className="bg-destructive hover:bg-destructive/90"
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-1.5 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white">
+                                    {t('actions')} <ChevronDown className="h-3 w-3" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={resetFilters} disabled={activeFiltersCount === 0}>
+                                    <XIcon className="ml-2 h-4 w-4" />
+                                    <span>{t('resetFilters')}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel className="text-xs text-muted-foreground px-2">{t('bulkDelete')}</DropdownMenuLabel>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem
+                                            onSelect={(e) => e.preventDefault()}
+                                            disabled={activeFiltersCount === 0 || itemsToDisplay.length === 0}
+                                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                         >
-                                            {t('confirmDelete')}
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem
-                                        onSelect={(e) => e.preventDefault()}
-                                        disabled={todaysItems.length === 0}
-                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                    >
-                                        <Upload className="ml-2 h-4 w-4" />
-                                        <span>
-                                            {t('deleteTodaysImports', { count: todaysItems.length })}
-                                        </span>
-                                    </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>{t('confirmDeleteTodaysImportsTitle')}</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            {t('confirmDeleteTodaysImportsDesc', { count: todaysItems.length })}
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            onClick={() => handleBulkDelete(todaysItems)}
-                                            className="bg-destructive hover:bg-destructive/90"
+                                            <Filter className="ml-2 h-4 w-4" />
+                                            <span>
+                                                {activeFiltersCount > 0 && itemsToDisplay.length > 0
+                                                    ? t('deleteFilteredItems', { count: itemsToDisplay.length })
+                                                    : t('selectFiltersToDelete')}
+                                            </span>
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>{t('confirmBulkDeleteTitle')}</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                {t('confirmBulkDeleteDescription', { count: itemsToDisplay.length, type: showTasks ? t('tasksTab') : t('lettersTab') })}
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() => handleBulkDelete(itemsToDisplay)}
+                                                className="bg-destructive hover:bg-destructive/90"
+                                            >
+                                                {t('confirmDelete')}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem
+                                            onSelect={(e) => e.preventDefault()}
+                                            disabled={todaysItems.length === 0}
+                                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                         >
-                                            {t('confirmDelete')}
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <div className="flex items-center bg-muted p-1 rounded-lg">
-                        <Button variant={showTasks ? "default" : "ghost"} onClick={() => setShowTasks(true)} className="px-3 py-1 h-8 text-sm flex items-center gap-2">
-                            <ListTodo className="h-4 w-4" /> {t('tasksTab')}
-                        </Button>
-                        <Button variant={!showTasks ? "default" : "ghost"} onClick={() => setShowTasks(false)} className="px-3 py-1 h-8 text-sm flex items-center gap-2">
-                            <FileText className="h-4 w-4" /> {t('lettersTab')}
-                        </Button>
+                                            <Upload className="ml-2 h-4 w-4" />
+                                            <span>
+                                                {t('deleteTodaysImports', { count: todaysItems.length })}
+                                            </span>
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>{t('confirmDeleteTodaysImportsTitle')}</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                {t('confirmDeleteTodaysImportsDesc', { count: todaysItems.length })}
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() => handleBulkDelete(todaysItems)}
+                                                className="bg-destructive hover:bg-destructive/90"
+                                            >
+                                                {t('confirmDelete')}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
+                </div>
+
+                {/* Pill Tab Switcher */}
+                <div className="relative mt-4 flex items-center gap-1 p-1 rounded-2xl w-fit"
+                    style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
+                    <button
+                        onClick={() => setShowTasks(true)}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                            showTasks
+                                ? "text-white shadow-lg"
+                                : "text-white/50 hover:text-white/80"
+                        )}
+                        style={showTasks ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                    >
+                        <ListTodo className="h-4 w-4" /> {t('tasksTab')}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                            style={{ background: showTasks ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                            {tasks.length}
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => setShowTasks(false)}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                            !showTasks
+                                ? "text-white shadow-lg"
+                                : "text-white/50 hover:text-white/80"
+                        )}
+                        style={!showTasks ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                    >
+                        <FileText className="h-4 w-4" /> {t('lettersTab')}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                            style={{ background: !showTasks ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                            {approvalLetters.length}
+                        </span>
+                    </button>
                 </div>
             </div>
 
             {/* Item List */}
-            <ScrollArea className="flex-grow">
-                <div className="space-y-3 pr-2">
+            <ScrollArea className="flex-grow px-4 pt-4">
+                <div className="space-y-2 pr-2 pb-4">
                     {itemsToDisplay.length > 0 ? itemsToDisplay.map(item => (
                         <ItemCard
                             key={item.id}
@@ -764,8 +833,12 @@ export default function Home() {
                             unshareItem={unshareItem}
                         />
                     )) : (
-                        <div className="text-center py-10 text-muted-foreground">
-                            <p>{showTasks ? t('noActiveTasks') : t('noActiveLetters')}</p>
+                        <div className="flex flex-col items-center py-16 text-muted-foreground gap-3">
+                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                                style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.1))' }}>
+                                {showTasks ? <ListTodo className="h-7 w-7 text-violet-400" /> : <FileText className="h-7 w-7 text-cyan-400" />}
+                            </div>
+                            <p className="text-sm font-medium">{showTasks ? t('noActiveTasks') : t('noActiveLetters')}</p>
                         </div>
                     )}
                 </div>
@@ -834,3 +907,4 @@ export default function Home() {
         </div>
     );
 }
+
