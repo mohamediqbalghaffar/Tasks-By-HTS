@@ -73,7 +73,7 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                     )}
                 </Button>
             </DialogTrigger>
-            <DialogContent onClick={(e) => e.stopPropagation()} className="sm:max-w-md bg-white dark:bg-gray-950 text-gray-900 dark:text-white border-gray-200 dark:border-gray-800">
+            <DialogContent onClick={(e) => e.stopPropagation()} className="sm:max-w-md">
                 {!showConfirm ? (
                     <>
                         <DialogHeader>
@@ -222,7 +222,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                 "cursor-pointer transition-all hover:shadow-lg relative group overflow-hidden",
                 isSelected
                     ? "ring-2 ring-primary shadow-md shadow-primary/20"
-                    : "hover:-translate-y-0.5",
+                    : "",
                 item.isUrgent && !item.isDone && "urgent-pulse-glow",
                 item.reminder && !item.isDone && new Date(item.reminder) < new Date() && "expired-pulse-glow",
                 item.isDone && "opacity-60"

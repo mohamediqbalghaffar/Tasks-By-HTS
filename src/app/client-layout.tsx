@@ -188,7 +188,6 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
         { href: '/', label: t('home'), icon: LayoutDashboard },
         { href: '/archives', label: t('archives'), icon: Archive },
         { href: '/data-analysis', label: t('dataAnalysis'), icon: BarChart3 },
-        { href: '/mutual', label: t('mutualItems'), icon: GitMerge },
     ];
 
     const handleAddClick = () => {

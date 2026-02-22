@@ -419,7 +419,7 @@ export default function DataAnalysisPage() {
                 {/* Total Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        className="hover:shadow-lg transition-all cursor-pointer"
                         onClick={() => openKPIModal(t('totalItems'), t('totalItemsDesc'), kpiData.totalItems, kpiData.allItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -436,7 +436,7 @@ export default function DataAnalysisPage() {
                 {/* Active Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        className="hover:shadow-lg transition-all cursor-pointer"
                         onClick={() => openKPIModal(t('totalActiveItems'), t('currentlyActive', { type: showTasks ? t('tasksTab') : t('lettersTab') }), kpiData.totalActive, kpiData.activeItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -453,7 +453,7 @@ export default function DataAnalysisPage() {
                 {/* Completed Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        className="hover:shadow-lg transition-all cursor-pointer"
                         onClick={() => openKPIModal(t('totalCompletedItems'), t('itemsCompleted'), kpiData.totalCompleted, kpiData.completedItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -470,7 +470,7 @@ export default function DataAnalysisPage() {
                 {/* Urgent Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        className="hover:shadow-lg transition-all cursor-pointer"
                         onClick={() => openKPIModal(t('urgentItems'), t('requireImmediateAttention'), kpiData.urgentCount, kpiData.urgentItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -487,7 +487,7 @@ export default function DataAnalysisPage() {
                 {/* Median Time KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                        className="hover:shadow-lg transition-all cursor-pointer"
                         onClick={() => openKPIModal(t('medianTimeToComplete'), t('medianCompletionTime'), kpiData.avgPriority, kpiData.completedItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
