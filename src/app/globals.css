@@ -16,9 +16,17 @@
 /* --- DYNAMIC BACKGROUND --- */
 /* This creates a multi-layered radial gradient background for a modern look. */
 @keyframes bg-shift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 html {
@@ -161,8 +169,8 @@ body {
     --primary-foreground: 0 0% 100%;
     /* White text */
 
-    --secondary: 0 0% 100%;
-    /* White text for high contrast */
+    --secondary: 250 30% 20%;
+    /* Dark matching background for secondary elements */
     --secondary-foreground: 0 0% 100%;
 
     --muted: 250 30% 35% / 0.5;
