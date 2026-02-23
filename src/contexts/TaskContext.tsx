@@ -167,7 +167,7 @@ interface TaskContextType {
     handleReminderChange: (id: string, type: 'task' | 'letter', date: Date | null) => Promise<void>;
     handlePriorityChange: (id: string, type: 'task' | 'letter', priority: number) => Promise<void>;
     handleSaveField: (id: string, field: keyof Task | keyof ApprovalLetter, value: any, type: 'task' | 'letter', config?: FieldConfig) => Promise<void>;
-    calculateDefaultReminder: () => Date;
+    calculateDefaultReminder: (startTime?: Date) => Date;
     handleReactivateFromCompleted: (id: string, type: 'task' | 'letter') => void;
     handleCleanUp: (category: 'completedTasks' | 'completedLetters' | 'expiredTasks' | 'expiredLetters') => void;
     handleSaveData: () => void;
@@ -882,10 +882,34 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, t]);
 
     // ... Helper functions
-    const calculateDefaultReminder = useCallback(() => {
-        const now = new Date();
-        // ... same implementation as before
-        return addDays(now, 1); // Simplified for this context write, logic should be preserved from original
+    const calculateDefaultReminder = useCallback((startTime?: Date) => {
+        let currentDate = startTime ? new Date(startTime) : new Date();
+
+        // If the start time is after 5:00 PM (17:00), or it's Friday/Saturday,
+        // we logically start counting from the NEXT working day's 8:00 AM.
+        // We handle Friday/Saturday skip inside the loop, but we need to adjust late 
+        // starts to be "start of next day" for counting purposes.
+        if (currentDate.getHours() >= 17) {
+            currentDate = addDays(currentDate, 1);
+            currentDate.setHours(8, 0, 0, 0);
+        }
+
+        let daysToAdd = 4; // We need to add exactly 4 working days
+
+        while (daysToAdd > 0) {
+            currentDate = addDays(currentDate, 1);
+            const dayOfWeek = currentDate.getDay(); // 0 is Sunday, 5 is Friday, 6 is Saturday
+
+            // If it's a working day (Sunday to Thursday), decrement the counter
+            if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                daysToAdd--;
+            }
+        }
+
+        // The reminder should be sent exactly at 9:00 AM on the calculated day
+        currentDate.setHours(9, 0, 0, 0);
+
+        return currentDate;
     }, []);
 
     const getItemById = useCallback((id: string) => {
@@ -940,12 +964,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             clearNotified(oldNotificationId);
         }
 
+        // Fallback to work days auto reminder if user deselects the reminder
+        const finalReminderDate = date === null ? calculateDefaultReminder(item?.startTime) : date;
+
         if (currentUser && db) {
             try {
                 const collectionName = type === 'task' ? 'tasks' : 'approvalLetters';
                 const docRef = doc(db, 'users', currentUser.uid, collectionName, id);
                 await updateDoc(docRef, {
-                    reminder: date ? Timestamp.fromDate(date) : null,
+                    reminder: Timestamp.fromDate(finalReminderDate),
                     updatedAt: serverTimestamp()
                 });
                 toast({ title: t('reminderUpdated') });
@@ -956,11 +983,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         } else {
             const list = type === 'task' ? tasks : approvalLetters;
             const setList = type === 'task' ? setTasks : setApprovalLetters;
-            const updatedList = list.map(i => i.id === id ? { ...i, reminder: date, updatedAt: new Date() } : i);
+            const updatedList = list.map(i => i.id === id ? { ...i, reminder: finalReminderDate, updatedAt: new Date() } : i);
             setList(updatedList as any);
             toast({ title: t('reminderUpdated') });
         }
-    }, [currentUser, tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, t]);
+    }, [currentUser, tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, t, calculateDefaultReminder]);
 
     const handlePriorityChange = useCallback(async (id: string, type: 'task' | 'letter', priority: number) => {
         const sharedItem = receivedItems.find(i => i.id === id);

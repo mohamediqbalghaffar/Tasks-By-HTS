@@ -108,6 +108,9 @@ export default function AddPage() {
             return;
         }
 
+        // Use custom start time as creation time if selected
+        const effectiveCreationTime = useCurrentTimeTask ? new Date() : (newTaskStartTime || new Date());
+
         let reminderToSave = newTaskReminder;
         if (newTaskIsUrgent && !reminderToSave) {
             const now = new Date();
@@ -115,11 +118,8 @@ export default function AddPage() {
                 ? set(addDays(now, 1), { hours: 8, minutes: 30, seconds: 0, milliseconds: 0 })
                 : addHours(now, 2);
         } else if (!reminderToSave) {
-            reminderToSave = calculateDefaultReminder();
+            reminderToSave = calculateDefaultReminder(effectiveCreationTime);
         }
-
-        // Use custom start time as creation time if selected
-        const effectiveCreationTime = useCurrentTimeTask ? new Date() : (newTaskStartTime || new Date());
 
         const taskData = {
             name: newTaskName,
@@ -143,6 +143,9 @@ export default function AddPage() {
             return;
         }
 
+        // Use custom start time as creation time if selected
+        const effectiveCreationTime = useCurrentTimeLetter ? new Date() : (newLetterStartTime || new Date());
+
         let reminderToSave = newLetterReminder;
         if (newLetterIsUrgent && !reminderToSave) {
             const now = new Date();
@@ -150,11 +153,8 @@ export default function AddPage() {
                 ? set(addDays(now, 1), { hours: 8, minutes: 30, seconds: 0, milliseconds: 0 })
                 : addHours(now, 2);
         } else if (!reminderToSave) {
-            reminderToSave = calculateDefaultReminder();
+            reminderToSave = calculateDefaultReminder(effectiveCreationTime);
         }
-
-        // Use custom start time as creation time if selected
-        const effectiveCreationTime = useCurrentTimeLetter ? new Date() : (newLetterStartTime || new Date());
 
         const letterData = {
             name: newLetterName,
@@ -272,7 +272,7 @@ export default function AddPage() {
                                 <DateTimePicker
                                     date={newTaskReminder}
                                     onSave={setNewTaskReminder}
-                                    onSelectDefault={() => setNewTaskReminder(calculateDefaultReminder())}
+                                    onSelectDefault={() => setNewTaskReminder(calculateDefaultReminder(useCurrentTimeTask ? new Date() : (newTaskStartTime || new Date())))}
                                     triggerButton={
                                         <Button variant={"outline"} className={cn("flex justify-between items-center text-right font-normal w-full", !newTaskReminder && "text-muted-foreground")}>
                                             <span>{newTaskReminder ? format(newTaskReminder, "dd/MM/yyyy hh:mm a") : t('pickADateAndTime')}</span>
@@ -390,7 +390,7 @@ export default function AddPage() {
                                 <DateTimePicker
                                     date={newLetterReminder}
                                     onSave={setNewLetterReminder}
-                                    onSelectDefault={() => setNewLetterReminder(calculateDefaultReminder())}
+                                    onSelectDefault={() => setNewLetterReminder(calculateDefaultReminder(useCurrentTimeLetter ? new Date() : (newLetterStartTime || new Date())))}
                                     triggerButton={
                                         <Button variant={"outline"} className={cn("flex justify-between items-center text-right font-normal w-full", !newLetterReminder && "text-muted-foreground")}>
                                             <span>{newLetterReminder ? format(newLetterReminder, "dd/MM/yyyy hh:mm a") : t('pickADateAndTime')}</span>

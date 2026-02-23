@@ -28,7 +28,7 @@ export interface DetailActions {
     handleUrgencyChange: (item: Task | ApprovalLetter) => Promise<void>;
     handleOpenEditField: (item: Task | ApprovalLetter, field: any) => void;
     handleDelete: (id: string, type: 'task' | 'letter') => Promise<void>;
-    calculateDefaultReminder: () => Date;
+    calculateDefaultReminder: (startTime?: Date) => Date;
     handleDateChange: (id: string, type: 'task' | 'letter', date: Date) => Promise<void>;
     handleSaveField: (id: string, field: any, value: any, type: 'task' | 'letter', config?: any) => Promise<void>;
 }
@@ -251,7 +251,7 @@ export const renderDetailContent = (
                             <DateTimePicker
                                 date={item.reminder}
                                 onSave={(newDate) => handleReminderChange(item.id, itemType, newDate)}
-                                onSelectDefault={() => handleReminderChange(item.id, itemType, calculateDefaultReminder())}
+                                onSelectDefault={() => handleReminderChange(item.id, itemType, calculateDefaultReminder(item.startTime))}
                                 triggerButton={
                                     <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",
                                         !item.reminder && "text-muted-foreground",
