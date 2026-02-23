@@ -69,6 +69,8 @@ export default function Home() {
     const {
         activeTab,
         setActiveTab,
+        isSharedView,
+        setIsSharedView,
         searchQuery,
         setSearchQuery,
         filterStatus,
@@ -81,6 +83,8 @@ export default function Home() {
         setFilterPriorities,
         filterSharedType,
         setFilterSharedType,
+        filterSharedUser,
+        setFilterSharedUser,
         filterDatePreset,
         setFilterDatePreset,
         filterCustomDateFrom,
@@ -132,18 +136,21 @@ export default function Home() {
         if (selectedItem) {
             const isTask = 'taskNumber' in selectedItem;
             const isShared = (selectedItem as any)._isShared;
-            if (activeTab === 'shared' && !isShared) {
+            if (isSharedView && !isShared) {
                 setSelectedItem(null);
                 setIsDetailViewOpen(false);
-            } else if (activeTab === 'tasks' && (!isTask || isShared)) {
+            } else if (!isSharedView && isShared) {
                 setSelectedItem(null);
                 setIsDetailViewOpen(false);
-            } else if (activeTab === 'letters' && (isTask || isShared)) {
+            } else if (activeTab === 'tasks' && !isTask) {
+                setSelectedItem(null);
+                setIsDetailViewOpen(false);
+            } else if (activeTab === 'letters' && isTask) {
                 setSelectedItem(null);
                 setIsDetailViewOpen(false);
             }
         }
-    }, [activeTab, selectedItem]);
+    }, [activeTab, isSharedView, selectedItem]);
 
 
     const handleCardClick = (item: Task | ApprovalLetter) => {
@@ -166,31 +173,39 @@ export default function Home() {
     const letterTypeOptions = ['letterType_general', 'letterType_termination', 'letterType_service_extension', 'letterType_candidacy', 'letterType_position_change', 'letterType_commencement', 'letterType_confirmation', 'letterType_leave', 'letterType_material_request', 'letterType_material_return'];
     const priorityOptions: { value: number, labelKey: string }[] = Array.from({ length: 10 }, (_, i) => ({ value: i + 1, labelKey: `priority${i + 1}` }));
 
+    const uniqueSenders = useMemo(() => {
+        const senders = new Set(receivedItems.map(ri => ri.senderName));
+        return Array.from(senders).filter(Boolean) as string[];
+    }, [receivedItems]);
+
 
     const itemsToDisplay = useMemo(() => {
         let baseItems: (Task | ApprovalLetter)[] = [];
-        if (activeTab === 'tasks') {
-            let items: Task[] = [];
-            if (filterStatus.includes('active')) items.push(...tasks.filter(t => !t.isDone));
-            if (filterStatus.includes('expired')) items.push(...expiredTasksList);
-            if (filterStatus.includes('completed')) items.push(...tasks.filter(t => t.isDone));
-            baseItems = items;
-        } else if (activeTab === 'letters') {
-            let items: ApprovalLetter[] = [];
-            if (filterStatus.includes('active')) items.push(...approvalLetters.filter(l => !l.isDone));
-            if (filterStatus.includes('expired')) items.push(...expiredApprovalLettersList);
-            if (filterStatus.includes('completed')) items.push(...approvalLetters.filter(l => l.isDone));
-            baseItems = items;
+
+        if (!isSharedView) {
+            if (activeTab === 'tasks') {
+                let items: Task[] = [];
+                if (filterStatus.includes('active')) items.push(...tasks.filter(t => !t.isDone));
+                if (filterStatus.includes('expired')) items.push(...expiredTasksList);
+                if (filterStatus.includes('completed')) items.push(...tasks.filter(t => t.isDone));
+                baseItems = items;
+            } else if (activeTab === 'letters') {
+                let items: ApprovalLetter[] = [];
+                if (filterStatus.includes('active')) items.push(...approvalLetters.filter(l => !l.isDone));
+                if (filterStatus.includes('expired')) items.push(...expiredApprovalLettersList);
+                if (filterStatus.includes('completed')) items.push(...approvalLetters.filter(l => l.isDone));
+                baseItems = items;
+            }
         }
 
-        // Add shared items if on shared tab or if shared filter is active (legacy support)
-        if (activeTab === 'shared' || filterStatus.includes('shared')) {
+        // Add shared items if on shared view
+        if (isSharedView || filterStatus.includes('shared')) {
             const showReceived = filterSharedType.length === 0 || filterSharedType.includes('received');
             const showSent = filterSharedType.length === 0 || filterSharedType.includes('sent');
             const now = new Date();
 
             if (showReceived) {
-                const receivedMapped = receivedItems
+                let receivedMapped = receivedItems
                     .map(item => {
                         // Create a base object with all required properties
                         const data = item.data as any;
@@ -226,13 +241,18 @@ export default function Home() {
                         if (isExpired) return filterStatus.includes('expired');
                         return filterStatus.includes('active');
                     });
+
+                if (filterSharedUser && filterSharedUser !== 'all_users') {
+                    receivedMapped = receivedMapped.filter(item => (item as any)._senderName === filterSharedUser);
+                }
+
                 baseItems.push(...receivedMapped);
             }
 
             if (showSent) {
                 // Determine which types we need
-                const getTasks = activeTab === 'shared' || activeTab === 'tasks';
-                const getLetters = activeTab === 'shared' || activeTab === 'letters';
+                const getTasks = activeTab === 'tasks';
+                const getLetters = activeTab === 'letters';
 
                 let sentItems: (Task | ApprovalLetter)[] = [];
 
@@ -271,7 +291,7 @@ export default function Home() {
             const priorityMatch = filterPriorities.length > 0 ? filterPriorities.includes(item.priority) : true;
 
             let letterMatch = true;
-            if (activeTab === 'letters' || (activeTab === 'shared' && !('taskNumber' in item))) {
+            if (activeTab === 'letters') {
                 const letter = item as ApprovalLetter;
                 const departmentMatch = filterDepartments.length > 0 ? filterDepartments.includes(letter.sentTo) : true;
                 const letterTypeMatch = filterLetterTypes.length > 0 ? filterLetterTypes.includes(letter.letterType) : true;
@@ -320,9 +340,9 @@ export default function Home() {
 
         return filteredItems;
     }, [
-        tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, activeTab,
+        tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, activeTab, isSharedView,
         searchQuery, filterStatus, filterPriorities, filterDepartments, filterLetterTypes,
-        filterSharedType, filterDatePreset, filterCustomDateFrom, filterCustomDateTo, sortOption, getDateFnsLocale, receivedItems
+        filterSharedType, filterSharedUser, filterDatePreset, filterCustomDateFrom, filterCustomDateTo, sortOption, getDateFnsLocale, receivedItems
     ]);
 
     const activeFiltersCount = useMemo(() => {
@@ -332,19 +352,20 @@ export default function Home() {
 
         if (searchQuery) count++;
         if (!isStatusDefault) count++;
-        if (activeTab === 'letters' || activeTab === 'shared') {
+        if (activeTab === 'letters') {
             if (filterLetterTypes.length > 0) count++;
             if (filterDepartments.length > 0) count++;
         }
-        if (activeTab === 'shared') {
+        if (isSharedView) {
             if (filterSharedType.length > 0) count++;
+            if (filterSharedUser) count++;
         }
 
         if (filterPriorities.length > 0) count++;
         if (filterDatePreset !== 'all') count++;
 
         return count;
-    }, [activeTab, searchQuery, filterStatus, filterLetterTypes, filterDepartments, filterSharedType, filterPriorities, filterDatePreset]);
+    }, [activeTab, isSharedView, searchQuery, filterStatus, filterLetterTypes, filterDepartments, filterSharedType, filterSharedUser, filterPriorities, filterDatePreset]);
 
     const todaysItems = useMemo(() => {
         const now = new Date();
@@ -388,8 +409,8 @@ export default function Home() {
                 </div>
 
                 {/* Mobile Tabs */}
-                <div className="px-4 pb-3">
-                    <div className="flex items-center bg-muted p-1 rounded-lg">
+                <div className="px-4 pb-3 flex items-center justify-between gap-2">
+                    <div className="flex-1 flex items-center bg-muted p-1 rounded-lg">
                         <Button
                             variant={activeTab === 'tasks' ? "default" : "ghost"}
                             onClick={() => setActiveTab('tasks')}
@@ -404,14 +425,14 @@ export default function Home() {
                         >
                             <FileText className="h-4 w-4" /> {t('lettersTab')}
                         </Button>
-                        <Button
-                            variant={activeTab === 'shared' ? "default" : "ghost"}
-                            onClick={() => setActiveTab('shared')}
-                            className="flex-1 h-9 text-xs flex items-center justify-center gap-1.5 px-0"
-                        >
-                            <Share2 className="h-4 w-4" /> {t('sharedTab') || "هاوبەشکراوەکان"}
-                        </Button>
                     </div>
+                    <Button
+                        variant={isSharedView ? "default" : "outline"}
+                        onClick={() => setIsSharedView(!isSharedView)}
+                        className="h-11 px-3 shrink-0 rounded-lg flex items-center justify-center gap-1.5"
+                    >
+                        <Share2 className="h-4 w-4" /> {t('sharedTab') || "هاوبەشکراوەکان"}
+                    </Button>
                 </div>
 
                 {/* Mobile Item List */}
@@ -442,7 +463,7 @@ export default function Home() {
                             );
                         }) : (
                             <div className="text-center py-10 text-muted-foreground">
-                                <p>{activeTab === 'tasks' ? t('noActiveTasks') : activeTab === 'letters' ? t('noActiveLetters') : t('noSharedItems') || "هیچ بابەتێکی هاوبەش نییە"}</p>
+                                <p>{isSharedView ? (t('noSharedItems') || "هیچ بابەتێکی هاوبەش نییە") : (activeTab === 'tasks' ? t('noActiveTasks') : t('noActiveLetters'))}</p>
                             </div>
                         )}
                     </div>
@@ -464,13 +485,17 @@ export default function Home() {
                     setFilterDatePreset={setFilterDatePreset}
                     sortOption={sortOption}
                     setSortOption={setSortOption}
-                    activeTab={activeTab}
+                    activeTab={activeTab as any}
+                    isSharedView={isSharedView}
                     filterDepartments={filterDepartments}
                     setFilterDepartments={setFilterDepartments}
                     filterLetterTypes={filterLetterTypes}
                     setFilterLetterTypes={setFilterLetterTypes}
                     filterSharedType={filterSharedType}
                     setFilterSharedType={setFilterSharedType}
+                    filterSharedUser={filterSharedUser}
+                    setFilterSharedUser={setFilterSharedUser}
+                    uniqueSenders={uniqueSenders}
                     t={t}
                     activeFiltersCount={activeFiltersCount}
                 />
@@ -625,6 +650,45 @@ export default function Home() {
                                             </div>
                                         </div>
                                         <Separator />
+
+                                        {/* Shared Type */}
+                                        {isSharedView && (
+                                            <>
+                                                <div>
+                                                    <Label>{t('sharedType') || "جۆری هاوبەش"}</Label>
+                                                    <div className="space-y-2 mt-2">
+                                                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                            <Checkbox id="shared-received" checked={filterSharedType.includes('received')} onCheckedChange={(checked) => setFilterSharedType(s => checked ? [...s, 'received'] : s.filter(i => i !== 'received'))} />
+                                                            <Label htmlFor="shared-received" className="font-normal">{t('received') || "هاتوو"}</Label>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                                                            <Checkbox id="shared-sent" checked={filterSharedType.includes('sent')} onCheckedChange={(checked) => setFilterSharedType(s => checked ? [...s, 'sent'] : s.filter(i => i !== 'sent'))} />
+                                                            <Label htmlFor="shared-sent" className="font-normal">{t('sent') || "نێردراو"}</Label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <Separator />
+                                                <div>
+                                                    <Label>{t('receivedBy') || "نێردراون لەلایەن"}</Label>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="outline" className="w-full mt-2">{filterSharedUser || (t('allUsers') || "هەموو بەکارهێنەران")}</Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent className="w-56">
+                                                            <DropdownMenuCheckboxItem checked={filterSharedUser === ''} onCheckedChange={() => setFilterSharedUser('')}>
+                                                                {t('allUsers') || "هەموو بەکارهێنەران"}
+                                                            </DropdownMenuCheckboxItem>
+                                                            <DropdownMenuSeparator />
+                                                            {uniqueSenders.map(sender => (
+                                                                <DropdownMenuCheckboxItem key={sender} checked={filterSharedUser === sender} onCheckedChange={() => setFilterSharedUser(sender)}>
+                                                                    {sender}
+                                                                </DropdownMenuCheckboxItem>
+                                                            ))}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                                <Separator />
+                                            </>
+                                        )}
+
                                         {/* Priority */}
                                         <div>
                                             <Label>{t('priority')}</Label>
@@ -708,7 +772,7 @@ export default function Home() {
                                         </div>
                                         <Separator />
                                         {/* Letter-specific filters */}
-                                        {(activeTab === 'letters' || activeTab === 'shared') && (
+                                        {activeTab === 'letters' && (
                                             <>
                                                 <div>
                                                     <Label>{t('departments')}</Label>
@@ -794,7 +858,7 @@ export default function Home() {
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>{t('confirmBulkDeleteTitle')}</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                {t('confirmBulkDeleteDescription', { count: itemsToDisplay.length, type: activeTab === 'tasks' ? t('tasksTab') : activeTab === 'letters' ? t('lettersTab') : t('sharedTab') || "هاوبەشکراوەکان" })}
+                                                {t('confirmBulkDeleteDescription', { count: itemsToDisplay.length, type: isSharedView ? (t('sharedTab') || "هاوبەشکراوەکان") : (activeTab === 'tasks' ? t('tasksTab') : t('lettersTab')) })}
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -845,55 +909,54 @@ export default function Home() {
                 </div>
 
                 {/* Pill Tab Switcher */}
-                <div className="relative mt-4 flex items-center gap-1 p-1 rounded-2xl w-fit"
-                    style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
+                <div className="relative mt-4 flex items-center justify-between w-full">
+                    <div className="flex items-center gap-1 p-1 rounded-2xl w-fit"
+                        style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
+                        <button
+                            onClick={() => setActiveTab('tasks')}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                                activeTab === 'tasks'
+                                    ? "text-white shadow-lg"
+                                    : "text-white/50 hover:text-white/80"
+                            )}
+                            style={activeTab === 'tasks' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                        >
+                            <ListTodo className="h-4 w-4" /> {t('tasksTab')}
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                                style={{ background: activeTab === 'tasks' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                                {tasks.length}
+                            </span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('letters')}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                                activeTab === 'letters'
+                                    ? "text-white shadow-lg"
+                                    : "text-white/50 hover:text-white/80"
+                            )}
+                            style={activeTab === 'letters' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                        >
+                            <FileText className="h-4 w-4" /> {t('lettersTab')}
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                                style={{ background: activeTab === 'letters' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                                {approvalLetters.length}
+                            </span>
+                        </button>
+                    </div>
+
                     <button
-                        onClick={() => setActiveTab('tasks')}
+                        onClick={() => setIsSharedView(!isSharedView)}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
-                            activeTab === 'tasks'
-                                ? "text-white shadow-lg"
-                                : "text-white/50 hover:text-white/80"
+                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow shadow-black/10",
+                            isSharedView
+                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 ring-1 ring-emerald-500/50"
+                                : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
                         )}
-                        style={activeTab === 'tasks' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
-                    >
-                        <ListTodo className="h-4 w-4" /> {t('tasksTab')}
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                            style={{ background: activeTab === 'tasks' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
-                            {tasks.length}
-                        </span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('letters')}
-                        className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
-                            activeTab === 'letters'
-                                ? "text-white shadow-lg"
-                                : "text-white/50 hover:text-white/80"
-                        )}
-                        style={activeTab === 'letters' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
-                    >
-                        <FileText className="h-4 w-4" /> {t('lettersTab')}
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                            style={{ background: activeTab === 'letters' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
-                            {approvalLetters.length}
-                        </span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('shared')}
-                        className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
-                            activeTab === 'shared'
-                                ? "text-white shadow-lg"
-                                : "text-white/50 hover:text-white/80"
-                        )}
-                        style={activeTab === 'shared' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                        style={{ backdropFilter: 'blur(8px)' }}
                     >
                         <Share2 className="h-4 w-4" /> {t('sharedTab') || "هاوبەشکراوەکان"}
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                            style={{ background: activeTab === 'shared' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
-                            {receivedItems.length}
-                        </span>
                     </button>
                 </div>
             </div>
@@ -918,9 +981,9 @@ export default function Home() {
                         <div className="flex flex-col items-center py-16 text-muted-foreground gap-3">
                             <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
                                 style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.1))' }}>
-                                {activeTab === 'tasks' ? <ListTodo className="h-7 w-7 text-violet-400" /> : activeTab === 'letters' ? <FileText className="h-7 w-7 text-cyan-400" /> : <Share2 className="h-7 w-7 text-emerald-400" />}
+                                {isSharedView ? <Share2 className="h-7 w-7 text-emerald-400" /> : (activeTab === 'tasks' ? <ListTodo className="h-7 w-7 text-violet-400" /> : <FileText className="h-7 w-7 text-cyan-400" />)}
                             </div>
-                            <p className="text-sm font-medium">{activeTab === 'tasks' ? t('noActiveTasks') : activeTab === 'letters' ? t('noActiveLetters') : t('noSharedItems') || "هیچ بابەتێکی هاوبەش نییە"}</p>
+                            <p className="text-sm font-medium">{isSharedView ? (t('noSharedItems') || "هیچ بابەتێکی هاوبەش نییە") : (activeTab === 'tasks' ? t('noActiveTasks') : t('noActiveLetters'))}</p>
                         </div>
                     )}
                 </div>

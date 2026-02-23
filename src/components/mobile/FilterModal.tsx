@@ -30,7 +30,8 @@ interface FilterModalProps {
     setSortOption: (value: string) => void;
 
     // Tab-specific filters
-    activeTab: 'tasks' | 'letters' | 'shared';
+    isSharedView: boolean;
+    activeTab: 'tasks' | 'letters';
     filterDepartments?: string[];
     setFilterDepartments?: (value: string[]) => void;
     filterLetterTypes?: string[];
@@ -39,6 +40,9 @@ interface FilterModalProps {
     // Shared-specific filters
     filterSharedType?: string[];
     setFilterSharedType?: (value: string[]) => void;
+    filterSharedUser?: string;
+    setFilterSharedUser?: (value: string) => void;
+    uniqueSenders?: string[];
 
     t: (key: string) => string;
     activeFiltersCount: number;
@@ -60,12 +64,16 @@ export function FilterModal({
     sortOption,
     setSortOption,
     activeTab,
+    isSharedView,
     filterDepartments = [],
     setFilterDepartments,
     filterLetterTypes = [],
     setFilterLetterTypes,
     filterSharedType = [],
     setFilterSharedType,
+    filterSharedUser = '',
+    setFilterSharedUser,
+    uniqueSenders = [],
     t,
     activeFiltersCount
 }: FilterModalProps) {
@@ -262,7 +270,7 @@ export function FilterModal({
                         </div>
 
                         {/* Shared-specific filters */}
-                        {activeTab === 'shared' && setFilterSharedType && (
+                        {isSharedView && setFilterSharedType && (
                             <>
                                 <Separator />
                                 <div>
@@ -304,11 +312,31 @@ export function FilterModal({
                                         </div>
                                     </div>
                                 </div>
+
+                                {setFilterSharedUser && uniqueSenders.length > 0 && (
+                                    <>
+                                        <Separator className="mt-6" />
+                                        <div className="space-y-3">
+                                            <Label className="text-base font-semibold block">{t('receivedBy') || "نێردراون لەلایەن"}</Label>
+                                            <Select value={filterSharedUser} onValueChange={setFilterSharedUser}>
+                                                <SelectTrigger className="w-full h-11">
+                                                    <SelectValue placeholder={t('allUsers') || "هەموو بەکارهێنەران"} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all_users">{t('allUsers') || "هەموو بەکارهێنەران"}</SelectItem>
+                                                    {uniqueSenders.map(sender => (
+                                                        <SelectItem key={sender} value={sender}>{sender}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </>
+                                )}
                             </>
                         )}
 
                         {/* Letter-specific filters */}
-                        {(activeTab === 'letters' || activeTab === 'shared') && setFilterDepartments && setFilterLetterTypes && (
+                        {(activeTab === 'letters') && setFilterDepartments && setFilterLetterTypes && (
                             <>
                                 <Separator />
 
