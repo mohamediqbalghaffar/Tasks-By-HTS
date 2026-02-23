@@ -64,7 +64,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
     // Filter states
     const [showTasks, setShowTasks] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState<string[]>(['active', 'expired']);
+    const [filterStatus, setFilterStatus] = useState<string[]>(['active', 'expired', 'shared']);
     const [filterLetterTypes, setFilterLetterTypes] = useState<string[]>([]);
     const [filterDepartments, setFilterDepartments] = useState<string[]>([]);
     const [filterPriorities, setFilterPriorities] = useState<number[]>([]);
@@ -175,7 +175,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
 
     const resetFilters = useCallback(() => {
         setSearchQuery('');
-        setFilterStatus(['active', 'expired']);
+        setFilterStatus(['active', 'expired', 'shared']);
         setFilterLetterTypes([]);
         setFilterDepartments([]);
         setFilterPriorities([]);

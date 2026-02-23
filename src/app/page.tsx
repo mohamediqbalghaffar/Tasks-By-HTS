@@ -206,7 +206,15 @@ export default function Home() {
                     } as Task | ApprovalLetter;
                 });
 
-            baseItems = [...baseItems, ...sharedItemsMapped];
+            const now = new Date();
+            const filteredSharedItems = sharedItemsMapped.filter(item => {
+                const isExpired = item.reminder && new Date(item.reminder) < now;
+                if (item.isDone) return filterStatus.includes('completed');
+                if (isExpired) return filterStatus.includes('expired');
+                return filterStatus.includes('active');
+            });
+
+            baseItems = [...baseItems, ...filteredSharedItems];
         }
 
         let filteredItems = baseItems.filter(item => {
@@ -275,7 +283,7 @@ export default function Home() {
 
     const activeFiltersCount = useMemo(() => {
         let count = 0;
-        const defaultStatus = ['active', 'expired'];
+        const defaultStatus = ['active', 'expired', 'shared'];
         const isStatusDefault = filterStatus.length === defaultStatus.length && filterStatus.every(s => defaultStatus.includes(s));
 
         if (searchQuery) count++;
