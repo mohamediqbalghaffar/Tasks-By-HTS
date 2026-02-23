@@ -253,7 +253,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const { toast } = useToast();
     const { t, language } = useLanguage();
     const { currentUser, userProfile } = useAuth();
-    const { showTasks, isEditingField, setEditingFieldValue } = useUI();
+    const { isEditingField, setEditingFieldValue } = useUI();
 
     useEffect(() => {
         setIsMounted(true);

@@ -29,12 +29,16 @@ interface FilterModalProps {
     sortOption: string;
     setSortOption: (value: string) => void;
 
-    // Letter-specific filters
-    showTasks: boolean;
+    // Tab-specific filters
+    activeTab: 'tasks' | 'letters' | 'shared';
     filterDepartments?: string[];
     setFilterDepartments?: (value: string[]) => void;
     filterLetterTypes?: string[];
     setFilterLetterTypes?: (value: string[]) => void;
+
+    // Shared-specific filters
+    filterSharedType?: string[];
+    setFilterSharedType?: (value: string[]) => void;
 
     t: (key: string) => string;
     activeFiltersCount: number;
@@ -55,11 +59,13 @@ export function FilterModal({
     setFilterDatePreset,
     sortOption,
     setSortOption,
-    showTasks,
+    activeTab,
     filterDepartments = [],
     setFilterDepartments,
     filterLetterTypes = [],
     setFilterLetterTypes,
+    filterSharedType = [],
+    setFilterSharedType,
     t,
     activeFiltersCount
 }: FilterModalProps) {
@@ -255,8 +261,54 @@ export function FilterModal({
                             </Select>
                         </div>
 
+                        {/* Shared-specific filters */}
+                        {activeTab === 'shared' && setFilterSharedType && (
+                            <>
+                                <Separator />
+                                <div>
+                                    <Label className="text-base font-semibold block mb-3">{t('sharedType') || "جۆری هاوبەش"}</Label>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                                            <Checkbox
+                                                id="mobile-shared-received"
+                                                checked={filterSharedType.includes('received')}
+                                                onCheckedChange={(checked) =>
+                                                    setFilterSharedType(
+                                                        checked
+                                                            ? [...filterSharedType, 'received']
+                                                            : filterSharedType.filter(s => s !== 'received')
+                                                    )
+                                                }
+                                                className="h-5 w-5"
+                                            />
+                                            <Label htmlFor="mobile-shared-received" className="font-normal text-base py-1 flex-1">
+                                                {t('received') || "هاتوو"}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                                            <Checkbox
+                                                id="mobile-shared-sent"
+                                                checked={filterSharedType.includes('sent')}
+                                                onCheckedChange={(checked) =>
+                                                    setFilterSharedType(
+                                                        checked
+                                                            ? [...filterSharedType, 'sent']
+                                                            : filterSharedType.filter(s => s !== 'sent')
+                                                    )
+                                                }
+                                                className="h-5 w-5"
+                                            />
+                                            <Label htmlFor="mobile-shared-sent" className="font-normal text-base py-1 flex-1">
+                                                {t('sent') || "نێردراو"}
+                                            </Label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         {/* Letter-specific filters */}
-                        {!showTasks && setFilterDepartments && setFilterLetterTypes && (
+                        {(activeTab === 'letters' || activeTab === 'shared') && setFilterDepartments && setFilterLetterTypes && (
                             <>
                                 <Separator />
 

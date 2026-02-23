@@ -67,8 +67,8 @@ export default function Home() {
     } = useTask();
 
     const {
-        showTasks,
-        setShowTasks,
+        activeTab,
+        setActiveTab,
         searchQuery,
         setSearchQuery,
         filterStatus,
@@ -79,6 +79,8 @@ export default function Home() {
         setFilterDepartments,
         filterPriorities,
         setFilterPriorities,
+        filterSharedType,
+        setFilterSharedType,
         filterDatePreset,
         setFilterDatePreset,
         filterCustomDateFrom,
@@ -125,16 +127,23 @@ export default function Home() {
 
 
     useEffect(() => {
-        // When switching between task/letter view, if the selected item is no longer
+        // When switching between tabs, if the selected item is no longer
         // in the visible list, clear the selection.
         if (selectedItem) {
             const isTask = 'taskNumber' in selectedItem;
-            if ((showTasks && !isTask) || (!showTasks && isTask)) {
+            const isShared = (selectedItem as any)._isShared;
+            if (activeTab === 'shared' && !isShared) {
+                setSelectedItem(null);
+                setIsDetailViewOpen(false);
+            } else if (activeTab === 'tasks' && (!isTask || isShared)) {
+                setSelectedItem(null);
+                setIsDetailViewOpen(false);
+            } else if (activeTab === 'letters' && (isTask || isShared)) {
                 setSelectedItem(null);
                 setIsDetailViewOpen(false);
             }
         }
-    }, [showTasks, selectedItem]);
+    }, [activeTab, selectedItem]);
 
 
     const handleCardClick = (item: Task | ApprovalLetter) => {
@@ -160,13 +169,13 @@ export default function Home() {
 
     const itemsToDisplay = useMemo(() => {
         let baseItems: (Task | ApprovalLetter)[] = [];
-        if (showTasks) {
+        if (activeTab === 'tasks') {
             let items: Task[] = [];
             if (filterStatus.includes('active')) items.push(...tasks.filter(t => !t.isDone));
             if (filterStatus.includes('expired')) items.push(...expiredTasksList);
             if (filterStatus.includes('completed')) items.push(...tasks.filter(t => t.isDone));
             baseItems = items;
-        } else {
+        } else if (activeTab === 'letters') {
             let items: ApprovalLetter[] = [];
             if (filterStatus.includes('active')) items.push(...approvalLetters.filter(l => !l.isDone));
             if (filterStatus.includes('expired')) items.push(...expiredApprovalLettersList);
@@ -174,47 +183,82 @@ export default function Home() {
             baseItems = items;
         }
 
-        // Add shared items
-        if (filterStatus.includes('shared')) {
-            const sharedItemsMapped = receivedItems
-                .filter(item => {
-                    // Check type match
-                    const isTaskItem = item.originalItemType === 'task' || 'taskNumber' in item.data;
-                    return showTasks ? isTaskItem : !isTaskItem;
-                })
-                .map(item => {
-                    // Create a base object with all required properties
-                    const data = item.data as any;
-                    return {
-                        ...data,
-                        id: item.id,
-                        // Add shared metadata
-                        _isShared: true,
-                        _senderName: item.senderName,
-                        _senderPhotoURL: item.senderPhotoURL,
-                        _sharedAt: item.sharedAt?.toDate ? item.sharedAt.toDate() : new Date(),
-                        _seenAt: item.seenAt?.toDate ? item.seenAt.toDate() : undefined,
-                        // Ensure Date objects
-                        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-                        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
-                        startTime: data.startTime ? new Date(data.startTime) : new Date(),
-                        reminder: data.reminder ? new Date(data.reminder) : null,
-                        originalReminder: data.originalReminder ? new Date(data.originalReminder) : null,
-                        completedAt: data.completedAt ? new Date(data.completedAt) : null,
-                        // Ensure required fields
-                        priority: data.priority || 5
-                    } as Task | ApprovalLetter;
-                });
-
+        // Add shared items if on shared tab or if shared filter is active (legacy support)
+        if (activeTab === 'shared' || filterStatus.includes('shared')) {
+            const showReceived = filterSharedType.length === 0 || filterSharedType.includes('received');
+            const showSent = filterSharedType.length === 0 || filterSharedType.includes('sent');
             const now = new Date();
-            const filteredSharedItems = sharedItemsMapped.filter(item => {
-                const isExpired = item.reminder && new Date(item.reminder) < now;
-                if (item.isDone) return filterStatus.includes('completed');
-                if (isExpired) return filterStatus.includes('expired');
-                return filterStatus.includes('active');
-            });
 
-            baseItems = [...baseItems, ...filteredSharedItems];
+            if (showReceived) {
+                const receivedMapped = receivedItems
+                    .map(item => {
+                        // Create a base object with all required properties
+                        const data = item.data as any;
+                        return {
+                            ...data,
+                            id: item.id,
+                            // Add shared metadata
+                            _isShared: true,
+                            _sharedDirection: 'received',
+                            _senderName: item.senderName,
+                            _senderPhotoURL: item.senderPhotoURL,
+                            _sharedAt: item.sharedAt?.toDate ? item.sharedAt.toDate() : new Date(),
+                            _seenAt: item.seenAt?.toDate ? item.seenAt.toDate() : undefined,
+                            // Ensure Date objects
+                            createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+                            updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+                            startTime: data.startTime ? new Date(data.startTime) : new Date(),
+                            reminder: data.reminder ? new Date(data.reminder) : null,
+                            originalReminder: data.originalReminder ? new Date(data.originalReminder) : null,
+                            completedAt: data.completedAt ? new Date(data.completedAt) : null,
+                            // Ensure required fields
+                            priority: data.priority || 5
+                        } as Task | ApprovalLetter;
+                    }).filter(item => {
+                        // Apply tab filter 
+                        const isTaskItem = 'taskNumber' in item || (item as any).originalItemType === 'task';
+                        if (activeTab === 'tasks' && !isTaskItem) return false;
+                        if (activeTab === 'letters' && isTaskItem) return false;
+
+                        // Apply status filter 
+                        const isExpired = item.reminder && new Date(item.reminder) < now;
+                        if (item.isDone) return filterStatus.includes('completed');
+                        if (isExpired) return filterStatus.includes('expired');
+                        return filterStatus.includes('active');
+                    });
+                baseItems.push(...receivedMapped);
+            }
+
+            if (showSent) {
+                // Determine which types we need
+                const getTasks = activeTab === 'shared' || activeTab === 'tasks';
+                const getLetters = activeTab === 'shared' || activeTab === 'letters';
+
+                let sentItems: (Task | ApprovalLetter)[] = [];
+
+                if (getTasks) {
+                    const allTasks = [...tasks, ...expiredTasksList];
+                    sentItems.push(...allTasks.filter(t => t.sharedCount && t.sharedCount > 0));
+                }
+
+                if (getLetters) {
+                    const allLetters = [...approvalLetters, ...expiredApprovalLettersList];
+                    sentItems.push(...allLetters.filter(l => l.sharedCount && l.sharedCount > 0));
+                }
+
+                const sentMapped = sentItems.map(item => ({
+                    ...item,
+                    _isShared: true,
+                    _sharedDirection: 'sent',
+                })).filter(item => {
+                    // Apply status filter
+                    const isExpired = item.reminder && new Date(item.reminder) < now;
+                    if (item.isDone) return filterStatus.includes('completed');
+                    if (isExpired) return filterStatus.includes('expired');
+                    return filterStatus.includes('active');
+                });
+                baseItems.push(...sentMapped as (Task | ApprovalLetter)[]);
+            }
         }
 
         let filteredItems = baseItems.filter(item => {
@@ -227,7 +271,7 @@ export default function Home() {
             const priorityMatch = filterPriorities.length > 0 ? filterPriorities.includes(item.priority) : true;
 
             let letterMatch = true;
-            if (!showTasks) {
+            if (activeTab === 'letters' || (activeTab === 'shared' && !('taskNumber' in item))) {
                 const letter = item as ApprovalLetter;
                 const departmentMatch = filterDepartments.length > 0 ? filterDepartments.includes(letter.sentTo) : true;
                 const letterTypeMatch = filterLetterTypes.length > 0 ? filterLetterTypes.includes(letter.letterType) : true;
@@ -276,9 +320,9 @@ export default function Home() {
 
         return filteredItems;
     }, [
-        tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, showTasks,
+        tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, activeTab,
         searchQuery, filterStatus, filterPriorities, filterDepartments, filterLetterTypes,
-        filterDatePreset, filterCustomDateFrom, filterCustomDateTo, sortOption, getDateFnsLocale
+        filterSharedType, filterDatePreset, filterCustomDateFrom, filterCustomDateTo, sortOption, getDateFnsLocale, receivedItems
     ]);
 
     const activeFiltersCount = useMemo(() => {
@@ -288,15 +332,19 @@ export default function Home() {
 
         if (searchQuery) count++;
         if (!isStatusDefault) count++;
-        if (!showTasks) {
+        if (activeTab === 'letters' || activeTab === 'shared') {
             if (filterLetterTypes.length > 0) count++;
             if (filterDepartments.length > 0) count++;
         }
+        if (activeTab === 'shared') {
+            if (filterSharedType.length > 0) count++;
+        }
+
         if (filterPriorities.length > 0) count++;
         if (filterDatePreset !== 'all') count++;
 
         return count;
-    }, [showTasks, searchQuery, filterStatus, filterLetterTypes, filterDepartments, filterPriorities, filterDatePreset]);
+    }, [activeTab, searchQuery, filterStatus, filterLetterTypes, filterDepartments, filterSharedType, filterPriorities, filterDatePreset]);
 
     const todaysItems = useMemo(() => {
         const now = new Date();
@@ -343,18 +391,25 @@ export default function Home() {
                 <div className="px-4 pb-3">
                     <div className="flex items-center bg-muted p-1 rounded-lg">
                         <Button
-                            variant={showTasks ? "default" : "ghost"}
-                            onClick={() => setShowTasks(true)}
-                            className="flex-1 h-9 text-sm flex items-center justify-center gap-2"
+                            variant={activeTab === 'tasks' ? "default" : "ghost"}
+                            onClick={() => setActiveTab('tasks')}
+                            className="flex-1 h-9 text-xs flex items-center justify-center gap-1.5 px-0"
                         >
                             <ListTodo className="h-4 w-4" /> {t('tasksTab')}
                         </Button>
                         <Button
-                            variant={!showTasks ? "default" : "ghost"}
-                            onClick={() => setShowTasks(false)}
-                            className="flex-1 h-9 text-sm flex items-center justify-center gap-2"
+                            variant={activeTab === 'letters' ? "default" : "ghost"}
+                            onClick={() => setActiveTab('letters')}
+                            className="flex-1 h-9 text-xs flex items-center justify-center gap-1.5 px-0"
                         >
                             <FileText className="h-4 w-4" /> {t('lettersTab')}
+                        </Button>
+                        <Button
+                            variant={activeTab === 'shared' ? "default" : "ghost"}
+                            onClick={() => setActiveTab('shared')}
+                            className="flex-1 h-9 text-xs flex items-center justify-center gap-1.5 px-0"
+                        >
+                            <Share2 className="h-4 w-4" /> {t('sharedTab') || "هاوبەشکراوەکان"}
                         </Button>
                     </div>
                 </div>
@@ -362,8 +417,9 @@ export default function Home() {
                 {/* Mobile Item List */}
                 <ScrollArea className="flex-1 px-4">
                     <div className="pb-4 space-y-3">
-                        {itemsToDisplay.length > 0 ? itemsToDisplay.map(item => (
-                            showTasks ? (
+                        {itemsToDisplay.length > 0 ? itemsToDisplay.map(item => {
+                            const isTaskItem = 'taskNumber' in item || (item as any).originalItemType === 'task';
+                            return isTaskItem ? (
                                 <TaskCard
                                     key={item.id}
                                     task={item as Task}
@@ -383,10 +439,10 @@ export default function Home() {
                                     t={t}
                                     getDateFnsLocale={getDateFnsLocale}
                                 />
-                            )
-                        )) : (
+                            );
+                        }) : (
                             <div className="text-center py-10 text-muted-foreground">
-                                <p>{showTasks ? t('noActiveTasks') : t('noActiveLetters')}</p>
+                                <p>{activeTab === 'tasks' ? t('noActiveTasks') : activeTab === 'letters' ? t('noActiveLetters') : t('noSharedItems') || "هیچ بابەتێکی هاوبەش نییە"}</p>
                             </div>
                         )}
                     </div>
@@ -408,11 +464,13 @@ export default function Home() {
                     setFilterDatePreset={setFilterDatePreset}
                     sortOption={sortOption}
                     setSortOption={setSortOption}
-                    showTasks={showTasks}
+                    activeTab={activeTab}
                     filterDepartments={filterDepartments}
                     setFilterDepartments={setFilterDepartments}
                     filterLetterTypes={filterLetterTypes}
                     setFilterLetterTypes={setFilterLetterTypes}
+                    filterSharedType={filterSharedType}
+                    setFilterSharedType={setFilterSharedType}
                     t={t}
                     activeFiltersCount={activeFiltersCount}
                 />
@@ -650,7 +708,7 @@ export default function Home() {
                                         </div>
                                         <Separator />
                                         {/* Letter-specific filters */}
-                                        {!showTasks && (
+                                        {(activeTab === 'letters' || activeTab === 'shared') && (
                                             <>
                                                 <div>
                                                     <Label>{t('departments')}</Label>
@@ -736,7 +794,7 @@ export default function Home() {
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>{t('confirmBulkDeleteTitle')}</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                {t('confirmBulkDeleteDescription', { count: itemsToDisplay.length, type: showTasks ? t('tasksTab') : t('lettersTab') })}
+                                                {t('confirmBulkDeleteDescription', { count: itemsToDisplay.length, type: activeTab === 'tasks' ? t('tasksTab') : activeTab === 'letters' ? t('lettersTab') : t('sharedTab') || "هاوبەشکراوەکان" })}
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -790,35 +848,51 @@ export default function Home() {
                 <div className="relative mt-4 flex items-center gap-1 p-1 rounded-2xl w-fit"
                     style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
                     <button
-                        onClick={() => setShowTasks(true)}
+                        onClick={() => setActiveTab('tasks')}
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
-                            showTasks
+                            activeTab === 'tasks'
                                 ? "text-white shadow-lg"
                                 : "text-white/50 hover:text-white/80"
                         )}
-                        style={showTasks ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                        style={activeTab === 'tasks' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
                     >
                         <ListTodo className="h-4 w-4" /> {t('tasksTab')}
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                            style={{ background: showTasks ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                            style={{ background: activeTab === 'tasks' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
                             {tasks.length}
                         </span>
                     </button>
                     <button
-                        onClick={() => setShowTasks(false)}
+                        onClick={() => setActiveTab('letters')}
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
-                            !showTasks
+                            activeTab === 'letters'
                                 ? "text-white shadow-lg"
                                 : "text-white/50 hover:text-white/80"
                         )}
-                        style={!showTasks ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                        style={activeTab === 'letters' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
                     >
                         <FileText className="h-4 w-4" /> {t('lettersTab')}
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                            style={{ background: !showTasks ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                            style={{ background: activeTab === 'letters' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
                             {approvalLetters.length}
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('shared')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+                            activeTab === 'shared'
+                                ? "text-white shadow-lg"
+                                : "text-white/50 hover:text-white/80"
+                        )}
+                        style={activeTab === 'shared' ? { background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 2px 12px rgba(124,58,237,0.4)' } : {}}
+                    >
+                        <Share2 className="h-4 w-4" /> {t('sharedTab') || "هاوبەشکراوەکان"}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                            style={{ background: activeTab === 'shared' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)' }}>
+                            {receivedItems.length}
                         </span>
                     </button>
                 </div>
@@ -844,9 +918,9 @@ export default function Home() {
                         <div className="flex flex-col items-center py-16 text-muted-foreground gap-3">
                             <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
                                 style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.1))' }}>
-                                {showTasks ? <ListTodo className="h-7 w-7 text-violet-400" /> : <FileText className="h-7 w-7 text-cyan-400" />}
+                                {activeTab === 'tasks' ? <ListTodo className="h-7 w-7 text-violet-400" /> : activeTab === 'letters' ? <FileText className="h-7 w-7 text-cyan-400" /> : <Share2 className="h-7 w-7 text-emerald-400" />}
                             </div>
-                            <p className="text-sm font-medium">{showTasks ? t('noActiveTasks') : t('noActiveLetters')}</p>
+                            <p className="text-sm font-medium">{activeTab === 'tasks' ? t('noActiveTasks') : activeTab === 'letters' ? t('noActiveLetters') : t('noSharedItems') || "هیچ بابەتێکی هاوبەش نییە"}</p>
                         </div>
                     )}
                 </div>

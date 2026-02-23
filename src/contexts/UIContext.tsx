@@ -21,8 +21,8 @@ interface UIContextType {
     setUiFont: (font: string) => void;
     backgroundUrl: string;
     setBackgroundUrl: (url: string) => void;
-    showTasks: boolean;
-    setShowTasks: React.Dispatch<React.SetStateAction<boolean>>;
+    activeTab: 'tasks' | 'letters' | 'shared';
+    setActiveTab: React.Dispatch<React.SetStateAction<'tasks' | 'letters' | 'shared'>>;
     searchQuery: string;
     setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
     filterStatus: string[];
@@ -33,6 +33,8 @@ interface UIContextType {
     setFilterDepartments: React.Dispatch<React.SetStateAction<string[]>>;
     filterPriorities: number[];
     setFilterPriorities: React.Dispatch<React.SetStateAction<number[]>>;
+    filterSharedType: string[];
+    setFilterSharedType: React.Dispatch<React.SetStateAction<string[]>>;
     filterDatePreset: string;
     setFilterDatePreset: React.Dispatch<React.SetStateAction<string>>;
     filterCustomDateFrom: Date | undefined;
@@ -62,12 +64,13 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
     const [isMounted, setIsMounted] = useState(false);
 
     // Filter states
-    const [showTasks, setShowTasks] = useState(true);
+    const [activeTab, setActiveTab] = useState<'tasks' | 'letters' | 'shared'>('shared');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<string[]>(['active', 'expired', 'shared']);
     const [filterLetterTypes, setFilterLetterTypes] = useState<string[]>([]);
     const [filterDepartments, setFilterDepartments] = useState<string[]>([]);
     const [filterPriorities, setFilterPriorities] = useState<number[]>([]);
+    const [filterSharedType, setFilterSharedType] = useState<string[]>([]);
     const [filterDatePreset, setFilterDatePreset] = useState<string>('all');
     const [filterCustomDateFrom, setFilterCustomDateFrom] = useState<Date | undefined>();
     const [filterCustomDateTo, setFilterCustomDateTo] = useState<Date | undefined>();
@@ -179,6 +182,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
         setFilterLetterTypes([]);
         setFilterDepartments([]);
         setFilterPriorities([]);
+        setFilterSharedType([]);
         setFilterDatePreset('all');
         setFilterCustomDateFrom(undefined);
         setFilterCustomDateTo(undefined);
@@ -191,12 +195,13 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
             viewMode, setViewMode,
             uiFont, setUiFont,
             backgroundUrl, setBackgroundUrl,
-            showTasks, setShowTasks,
+            activeTab, setActiveTab,
             searchQuery, setSearchQuery,
             filterStatus, setFilterStatus,
             filterLetterTypes, setFilterLetterTypes,
             filterDepartments, setFilterDepartments,
             filterPriorities, setFilterPriorities,
+            filterSharedType, setFilterSharedType,
             filterDatePreset, setFilterDatePreset,
             filterCustomDateFrom, setFilterCustomDateFrom,
             filterCustomDateTo, setFilterCustomDateTo,
