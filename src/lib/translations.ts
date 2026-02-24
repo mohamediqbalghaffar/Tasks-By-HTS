@@ -657,6 +657,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     "totalItems": "کۆی گشتی",
     "totalItemsDesc": "کۆی گشتی ئایتمەکان (چالاک + تەواوکراو)",
     "urgentItems": "بابەتە بەپەلەکان",
+    "departmentalLoad": "باری کار لەسەر بەشەکان",
+    "departmentalLoadDesc": "دابەشبوونی کارەکان لەسەر بەشە جیاوازەکان (HR، ژمێریاری، هتد)",
     "dateRangeFilter": "فلتەری بەرواری",
     "fromDate": "لە بەرواری",
     "toDate": "بۆ بەرواری",

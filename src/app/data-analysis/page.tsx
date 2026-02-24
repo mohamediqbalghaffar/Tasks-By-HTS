@@ -119,9 +119,11 @@ export default function DataAnalysisPage() {
     } = useTask();
 
     const {
-        showTasks,
-        setShowTasks,
+        activeTab,
+        setActiveTab,
     } = useUI();
+    const showTasks = activeTab === 'tasks';
+    const setShowTasks = (val: boolean) => setActiveTab(val ? 'tasks' : 'letters');
 
     // Date range filter state
     const [fromDate, setFromDate] = React.useState<Date | null>(null);
@@ -177,7 +179,7 @@ export default function DataAnalysisPage() {
         setKpiModal(prev => ({ ...prev, isOpen: false }));
     }, []);
 
-    const { kpiData, matrixData, statusData, priorityData, filteredItems } = React.useMemo(() => {
+    const { kpiData, matrixData, statusData, priorityData, departmentData, filteredItems } = React.useMemo(() => {
         const relevantItems = showTasks ? tasks : approvalLetters;
         const relevantExpired = showTasks ? expiredTasksList : expiredApprovalLettersList;
 
@@ -322,7 +324,27 @@ export default function DataAnalysisPage() {
             { name: t('moreThanOneWeek'), value: timeBuckets.moreThanOneWeek },
         ].filter(item => item.value > 0);
 
-        return { kpiData: kpi, matrixData: matrix, statusData: status, priorityData: priority, filteredItems: filtered };
+        // --- DEPARTMENTAL LOAD DATA ---
+        const departments: Record<string, { name: string, active: number, completed: number }> = {};
+
+        // Only relevant for Letters
+        if (!showTasks) {
+            filtered.forEach(item => {
+                const deptKey = (item as ApprovalLetter).sentTo || 'other';
+                const deptLabel = t(deptKey) || deptKey;
+
+                if (!departments[deptKey]) {
+                    departments[deptKey] = { name: deptLabel, active: 0, completed: 0 };
+                }
+
+                if (item.isDone) departments[deptKey].completed++;
+                else departments[deptKey].active++;
+            });
+        }
+
+        const department = Object.values(departments).filter(d => d.active > 0 || d.completed > 0);
+
+        return { kpiData: kpi, matrixData: matrix, statusData: status, priorityData: priority, departmentData: department, filteredItems: filtered };
     }, [tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, receivedItems, currentUser, showTasks, t, fromDate, toDate]);
 
     const handleScatterClick = React.useCallback((props: any) => {
@@ -345,17 +367,25 @@ export default function DataAnalysisPage() {
 
     const DataChartTooltip = React.useCallback(({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
-            const data = payload[0];
-            const name = data.name || label;
             return (
-                <div className="p-2 text-sm rounded-md glass-card">
-                    <p className="font-bold text-primary">{name}</p>
-                    <p className="text-foreground">{`${t('countLabel', { count: data.value })}`}</p>
+                <div className="p-3 text-sm rounded-xl glass-card border border-white/10 shadow-2xl backdrop-blur-xl">
+                    <p className="font-bold text-primary mb-2 text-base border-b border-white/10 pb-1">{label}</p>
+                    <div className="space-y-1">
+                        {payload.map((entry: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.fill }} />
+                                    <span className="text-muted-foreground">{entry.name}:</span>
+                                </div>
+                                <span className="font-bold">{entry.value}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             );
         }
         return null;
-    }, [t]);
+    }, []);
 
     const COLORS = React.useMemo(() => [
         "hsl(var(--primary))",
@@ -587,6 +617,84 @@ export default function DataAnalysisPage() {
                         </CardContent>
                     </Card>
                 </motion.div>
+
+                {/* Departmental Load - Stacked Bar Chart */}
+                {!showTasks && departmentData.length > 0 && (
+                    <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className="lg:col-span-2">
+                        <Card className="hover:shadow-lg transition-shadow overflow-hidden relative border-none glass-card bg-opacity-10">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -z-10" />
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChartHorizontal className="h-5 w-5 text-primary" />
+                                    {t('departmentalLoad')}
+                                </CardTitle>
+                                <CardDescription>{t('departmentalLoadDesc')}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[450px] pb-12">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={departmentData}
+                                        layout="vertical"
+                                        margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+                                        barGap={8}
+                                    >
+                                        <defs>
+                                            <linearGradient id="activeGradient" x1="0" y1="0" x2="1" y2="0">
+                                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                                            </linearGradient>
+                                            <linearGradient id="completedGradient" x1="0" y1="0" x2="1" y2="0">
+                                                <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
+                                                <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={1} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border) / 0.3)" />
+                                        <YAxis
+                                            dataKey="name"
+                                            type="category"
+                                            tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
+                                            width={100}
+                                            axisLine={false}
+                                            tickLine={false}
+                                        />
+                                        <XAxis type="number" hide />
+                                        <Tooltip
+                                            content={<DataChartTooltip />}
+                                            cursor={{ fill: 'hsl(var(--primary) / 0.05)', radius: 8 }}
+                                        />
+                                        <Legend
+                                            verticalAlign="top"
+                                            align="right"
+                                            iconType="circle"
+                                            wrapperStyle={{ paddingBottom: '20px' }}
+                                        />
+                                        <Bar
+                                            dataKey="active"
+                                            name={t('activeCount')}
+                                            stackId="a"
+                                            fill="url(#activeGradient)"
+                                            radius={[0, 0, 0, 0]}
+                                            barSize={32}
+                                            isAnimationActive={true}
+                                            animationDuration={1000}
+                                        />
+                                        <Bar
+                                            dataKey="completed"
+                                            name={t('completedCount')}
+                                            stackId="a"
+                                            fill="url(#completedGradient)"
+                                            radius={[0, 6, 6, 0]}
+                                            barSize={32}
+                                            isAnimationActive={true}
+                                            animationDuration={1200}
+                                            animationBegin={200}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
             </div>
 
             {/* KPI Detail Modal */}
