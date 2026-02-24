@@ -343,7 +343,10 @@ export default function DataAnalysisPage() {
             });
         }
 
-        const department = Object.values(departments).filter(d => d.active > 0 || d.completed > 0);
+        const department = Object.values(departments).map(d => ({
+            ...d,
+            total: d.active + d.completed
+        })).filter(d => d.total > 0);
 
         return { kpiData: kpi, matrixData: matrix, statusData: status, priorityData: priority, departmentData: department, filteredItems: filtered };
     }, [tasks, approvalLetters, expiredTasksList, expiredApprovalLettersList, receivedItems, currentUser, showTasks, t, fromDate, toDate]);
@@ -598,51 +601,34 @@ export default function DataAnalysisPage() {
                         </CardHeader>
                         <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    data={statusData}
-                                    layout="vertical"
-                                    margin={{ top: 5, right: isMobile ? 10 : 30, left: 10, bottom: 5 }}
-                                >
-                                    <defs>
-                                        <linearGradient id="statusGradient" x1="0" y1="0" x2="1" y2="0">
-                                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.6} />
-                                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--foreground) / 0.1)" />
-                                    <XAxis type="number" hide reversed={true} />
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        width={isMobile ? 80 : 120}
-                                        tick={{
-                                            fill: 'currentColor',
-                                            fontSize: isMobile ? 11 : 13,
-                                            fontWeight: 700
-                                        }}
-                                        className="text-foreground"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        orientation="right"
-                                    />
-                                    <Tooltip content={<DataChartTooltip />} cursor={{ fill: 'hsl(var(--foreground) / 0.05)', radius: 8 }} />
-                                    <Legend
-                                        verticalAlign="top"
-                                        align="left"
-                                        iconType="circle"
-                                        wrapperStyle={{ paddingBottom: '20px', fontWeight: 600 }}
-                                        formatter={(value) => <span className="text-foreground">{value}</span>}
-                                    />
-                                    <Bar
+                                <PieChart>
+                                    <Pie
+                                        data={statusData}
+                                        cx="50%"
+                                        cy="50%"
+                                        labelLine={false}
+                                        label={renderCustomizedLabel}
+                                        outerRadius={isMobile ? 100 : 120}
+                                        innerRadius={isMobile ? 60 : 70}
+                                        paddingAngle={5}
                                         dataKey="value"
-                                        name={showTasks ? t('tasksTab') : t('lettersTab')}
-                                        fill="url(#statusGradient)"
-                                        radius={[10, 0, 0, 10]}
-                                        barSize={45}
+                                        nameKey="name"
                                         isAnimationActive={true}
                                         animationDuration={1000}
+                                    >
+                                        {statusData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<DataChartTooltip />} />
+                                    <Legend
+                                        verticalAlign="bottom"
+                                        align="center"
+                                        iconType="circle"
+                                        wrapperStyle={{ paddingTop: '20px', fontWeight: 600 }}
+                                        formatter={(value) => <span className="text-foreground">{value}</span>}
                                     />
-                                </BarChart>
+                                </PieChart>
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
@@ -664,8 +650,8 @@ export default function DataAnalysisPage() {
                                         cy="50%"
                                         labelLine={false}
                                         label={renderCustomizedLabel}
-                                        outerRadius={120}
-                                        innerRadius={70}
+                                        outerRadius={isMobile ? 100 : 120}
+                                        innerRadius={isMobile ? 60 : 70}
                                         paddingAngle={5}
                                         fill="#8884d8"
                                         dataKey="value"
@@ -674,11 +660,17 @@ export default function DataAnalysisPage() {
                                         animationDuration={800}
                                     >
                                         {priorityData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip content={<DataChartTooltip />} />
-                                    <Legend />
+                                    <Legend
+                                        verticalAlign="bottom"
+                                        align="center"
+                                        iconType="circle"
+                                        wrapperStyle={{ paddingTop: '20px', fontWeight: 600 }}
+                                        formatter={(value) => <span className="text-foreground">{value}</span>}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -697,72 +689,43 @@ export default function DataAnalysisPage() {
                                 </CardTitle>
                                 <CardDescription className="text-muted-foreground/80">{t('departmentalLoadDesc')}</CardDescription>
                             </CardHeader>
-                            <CardContent className="h-[450px] pb-12">
+                            <CardContent className="h-[450px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={departmentData}
-                                        layout="vertical"
-                                        margin={{ top: 5, right: isMobile ? 10 : 30, left: 10, bottom: 5 }}
-                                    >
-                                        <defs>
-                                            <linearGradient id="activeGradient" x1="0" y1="0" x2="1" y2="0">
-                                                <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.6} />
-                                                <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={1} />
-                                            </linearGradient>
-                                            <linearGradient id="completedGradient" x1="0" y1="0" x2="1" y2="0">
-                                                <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.6} />
-                                                <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={1} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--foreground) / 0.1)" />
-                                        <YAxis
-                                            dataKey="name"
-                                            type="category"
-                                            tick={{
-                                                fill: 'currentColor',
-                                                fontSize: isMobile ? 10 : 13,
-                                                fontWeight: 700
-                                            }}
-                                            className="text-foreground"
-                                            width={isMobile ? 100 : 250}
-                                            axisLine={false}
-                                            tickLine={false}
-                                            orientation="right"
-                                        />
-                                        <XAxis type="number" hide reversed={true} />
-                                        <Tooltip
-                                            content={<DataChartTooltip />}
-                                            cursor={{ fill: 'hsl(var(--foreground) / 0.05)', radius: 8 }}
-                                        />
-                                        <Legend
-                                            verticalAlign="top"
-                                            align="right"
-                                            iconType="circle"
-                                            wrapperStyle={{ paddingBottom: '20px', fontWeight: 600 }}
-                                            formatter={(value) => <span className="text-foreground">{value}</span>}
-                                        />
-                                        <Bar
-                                            dataKey="active"
-                                            name={t('activeCount')}
-                                            stackId="a"
-                                            fill="url(#activeGradient)"
-                                            radius={[0, 0, 0, 0]}
-                                            barSize={32}
-                                            isAnimationActive={true}
-                                            animationDuration={1000}
-                                        />
-                                        <Bar
-                                            dataKey="completed"
-                                            name={t('completedCount')}
-                                            stackId="a"
-                                            fill="url(#completedGradient)"
-                                            radius={[10, 0, 0, 10]}
-                                            barSize={32}
+                                    <PieChart>
+                                        <Pie
+                                            data={departmentData}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            label={renderCustomizedLabel}
+                                            outerRadius={isMobile ? 120 : 140}
+                                            innerRadius={isMobile ? 70 : 80}
+                                            paddingAngle={3}
+                                            dataKey="total"
+                                            nameKey="name"
                                             isAnimationActive={true}
                                             animationDuration={1200}
-                                            animationBegin={200}
+                                        >
+                                            {departmentData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[(index + 4) % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<DataChartTooltip />} />
+                                        <Legend
+                                            verticalAlign="bottom"
+                                            align="center"
+                                            iconType="circle"
+                                            layout={isMobile ? 'horizontal' : 'vertical'}
+                                            wrapperStyle={{
+                                                paddingTop: '20px',
+                                                fontWeight: 600,
+                                                fontSize: isMobile ? '10px' : '12px',
+                                                maxHeight: '100px',
+                                                overflowY: 'auto'
+                                            }}
+                                            formatter={(value) => <span className="text-foreground">{value}</span>}
                                         />
-                                    </BarChart>
+                                    </PieChart>
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
