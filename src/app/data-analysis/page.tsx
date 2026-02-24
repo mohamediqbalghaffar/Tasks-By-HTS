@@ -449,7 +449,7 @@ export default function DataAnalysisPage() {
                 {/* Total Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer"
+                        className="hover:shadow-lg transition-all cursor-pointer glass-card border-none bg-white/20 dark:bg-black/30 backdrop-blur-xl"
                         onClick={() => openKPIModal(t('totalItems'), t('totalItemsDesc'), kpiData.totalItems, kpiData.allItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -466,7 +466,7 @@ export default function DataAnalysisPage() {
                 {/* Active Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer"
+                        className="hover:shadow-lg transition-all cursor-pointer glass-card border-none bg-white/20 dark:bg-black/30 backdrop-blur-xl"
                         onClick={() => openKPIModal(t('totalActiveItems'), t('currentlyActive', { type: showTasks ? t('tasksTab') : t('lettersTab') }), kpiData.totalActive, kpiData.activeItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -483,7 +483,7 @@ export default function DataAnalysisPage() {
                 {/* Completed Items KPI - Clickable */}
                 <motion.div variants={cardVariants}>
                     <Card
-                        className="hover:shadow-lg transition-all cursor-pointer"
+                        className="hover:shadow-lg transition-all cursor-pointer glass-card border-none bg-white/20 dark:bg-black/30 backdrop-blur-xl"
                         onClick={() => openKPIModal(t('totalCompletedItems'), t('itemsCompleted'), kpiData.totalCompleted, kpiData.completedItems)}
                     >
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

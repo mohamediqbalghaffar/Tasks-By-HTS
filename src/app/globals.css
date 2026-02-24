@@ -43,9 +43,14 @@ html {
 }
 
 html.dark {
-  background-image: none;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(124, 58, 237, 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(167, 139, 250, 0.1) 0%, transparent 70%),
+    linear-gradient(135deg, hsl(220, 25%, 5%) 0%, hsl(220, 25%, 8%) 40%, hsl(250, 25%, 6%) 70%, hsl(200, 25%, 4%) 100%);
   background-color: hsl(220, 15%, 5%);
-  animation: none;
+  background-size: 200% 200%;
+  animation: bg-shift 20s ease infinite;
 }
 
 
@@ -151,54 +156,42 @@ body {
   }
 
   .dark {
-    --background: 220 15% 3% / 0.3;
-    /* Semi-transparent Dark Slate Blue - enhanced for liquid glass */
+    --background: 220 25% 4% / 0.4;
     --foreground: 0 0% 100%;
-    /* Clear, bright white text */
 
-    --card: 250 40% 25% / 0.2;
-    /* Deeper purple, more transparent for liquid glass */
+    --card: 250 30% 12% / 0.35;
     --card-foreground: 0 0% 100%;
 
-    --popover: 250 40% 15% / 0.4;
-    /* Enhanced transparency for liquid glass */
+    --popover: 250 30% 8% / 0.6;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 250 50% 55%;
-    /* A vibrant purple for active elements */
+    --primary: 250 60% 65%;
     --primary-foreground: 0 0% 100%;
-    /* White text */
 
-    --secondary: 250 30% 20%;
-    /* Dark matching background for secondary elements */
+    --secondary: 250 25% 15% / 0.8;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 250 30% 35% / 0.5;
-    /* Muted purple for inactive elements */
-    --muted-foreground: 0 0% 85%;
-    /* Brighter white for better visibility */
+    --muted: 250 20% 25% / 0.5;
+    --muted-foreground: 220 10% 80%;
 
-    --accent: 250 50% 55%;
-    /* Using new primary purple as accent */
+    --accent: 250 60% 65%;
     --accent-foreground: 0 0% 100%;
-    /* White text on accent */
 
-    --destructive: 0 70% 65%;
-    /* Bright Red */
+    --destructive: 0 85% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 250 30% 50% / 0.2;
-    /* Subtle purple border - more transparent */
-    --input: 250 20% 20% / 0.4;
-    /* Semi-transparent input background - enhanced */
-    --ring: 250 60% 65%;
-    /* Brighter Purple ring */
+    --border: 250 40% 60% / 0.15;
+    --input: 250 30% 10% / 0.6;
+    --ring: 250 70% 70%;
+    
+    --glass-opacity-dark: 0.55;
+    --glass-blur-dark: 48px;
 
     /* Eisenhower Quadrant Colors for dark mode*/
-    --quadrant-do-color: 140 60% 50% / 0.2;
-    --quadrant-schedule-color: 45 80% 60% / 0.2;
-    --quadrant-delegate-color: 210 80% 65% / 0.2;
-    --quadrant-eliminate-color: 0 0% 70% / 0.2;
+    --quadrant-do-color: 140 70% 50% / 0.25;
+    --quadrant-schedule-color: 45 90% 60% / 0.25;
+    --quadrant-delegate-color: 210 90% 65% / 0.25;
+    --quadrant-eliminate-color: 0 0% 75% / 0.25;
   }
 }
 

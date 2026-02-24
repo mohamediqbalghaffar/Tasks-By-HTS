@@ -221,10 +221,10 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
             onClick={() => onCardClick(item)}
             className={cn(
                 "cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 relative group overflow-hidden border-0",
-                "glass-card backdrop-blur-xl bg-white/5 dark:bg-black/20",
+                "glass-card backdrop-blur-xl bg-white/20 dark:bg-black/30",
                 isSelected
-                    ? "ring-2 ring-primary bg-primary/5 shadow-[0_0_25px_rgba(var(--primary),0.2)]"
-                    : "hover:bg-white/10 dark:hover:bg-white/5",
+                    ? "ring-2 ring-primary bg-primary/10 shadow-[0_0_25px_rgba(var(--primary),0.2)]"
+                    : "hover:bg-white/30 dark:hover:bg-white/5",
                 item.isUrgent && !item.isDone && "urgent-pulse-glow",
                 item.reminder && !item.isDone && new Date(item.reminder) < new Date() && "expired-pulse-glow",
                 item.isDone && "opacity-60 grayscale-[0.5]"
@@ -281,7 +281,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                             <p className="text-xs text-muted-foreground break-words truncate pr-1" title={item.detail}>{item.detail}</p>
                         </div>
                     </div>
-                    <div className="flex items-center p-1 bg-white/5 dark:bg-black/20 rounded-xl border border-white/10 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                    <div className="flex items-center p-1 bg-white/10 dark:bg-black/30 rounded-xl border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button
@@ -375,7 +375,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center p-1 bg-white/5 dark:bg-black/20 rounded-xl border border-white/10 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                    <div className="flex items-center p-1 bg-white/10 dark:bg-black/30 rounded-xl border border-white/20 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button

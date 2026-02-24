@@ -121,7 +121,7 @@ function ProfileSection() {
 
 function RootLayoutContent({ children }: { children: React.ReactNode }) {
     const { t } = useLanguage();
-    const { backgroundUrl, viewMode } = useUI(); // Updated from useLanguage
+    const { backgroundUrl, viewMode, theme } = useUI(); // Added theme
     const { currentUser, userProfile, isLoading } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
@@ -217,18 +217,29 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
 
     // Desktop Layout
     return (
-        <div className="flex h-screen" style={{ background: 'linear-gradient(135deg, #f0f2f8 0%, #e8eaf6 50%, #f3e8ff 100%)' }}>
+        <div className={cn(
+            "flex h-screen transition-all duration-700",
+            theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                ? "bg-transparent"
+                : "bg-gradient-to-br from-[#f0f2f8] via-[#e8eaf6] to-[#f3e8ff]"
+        )}>
             {/* Sidebar */}
             <aside
-                className="w-48 flex-shrink-0 flex flex-col items-center py-5 relative overflow-hidden"
+                className={cn(
+                    "w-48 flex-shrink-0 flex flex-col items-center py-5 relative overflow-hidden transition-all duration-500",
+                    "border-l border-white/10 shadow-2xl"
+                )}
                 style={{
-                    background: 'linear-gradient(180deg, #1a1040 0%, #2d1b69 35%, #0f2454 70%, #0a1628 100%)',
-                    boxShadow: '4px 0 32px rgba(0,0,0,0.3)',
+                    background: theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                        ? 'linear-gradient(180deg, rgba(20, 15, 45, 0.98) 0%, rgba(30, 20, 70, 0.95) 35%, rgba(10, 25, 50, 0.95) 70%, rgba(5, 10, 25, 0.98) 100%)'
+                        : 'linear-gradient(180deg, #2d1b69 0%, #1e1345 35%, #0a1128 70%, #050a14 100%)',
+                    boxShadow: '4px 0 40px rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(20px)'
                 }}
             >
                 {/* Decorative glow orb */}
                 <div className="absolute top-0 left-0 w-full h-48 opacity-20 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, #7c3aed 0%, transparent 70%)' }} />
-                <div className="absolute bottom-0 right-0 w-32 h-32 opacity-10 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 100% 100%, #06b6d4 0%, transparent 70%)' }} />
+                <div className="absolute bottom-0 right-0 w-32 h-32 opacity-15 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 100% 100%, #06b6d4 0%, transparent 70%)' }} />
 
                 {/* Brand Logo */}
                 <div className="w-full px-4 mb-6 flex flex-col items-center gap-2">
