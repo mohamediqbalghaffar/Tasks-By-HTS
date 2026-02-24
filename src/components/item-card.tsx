@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { CompletionDialog } from '@/components/ui/completion-dialog';
 import { SharedWithList } from '@/components/shared-with-list';
 import { useToast } from "@/hooks/use-toast";
-
 interface ItemCardProps {
     item: Task | ApprovalLetter;
     isSelected: boolean;
@@ -25,6 +24,7 @@ interface ItemCardProps {
     getDateFnsLocale: () => any;
     shareItem: (item: Task | ApprovalLetter, code: number, force?: boolean) => Promise<'success' | 'already_shared' | 'user_not_found' | 'error'>;
     unshareItem?: (itemId: string, itemType: 'task' | 'letter', targetUserId: string) => Promise<boolean>;
+    cardNumber?: number;
 }
 
 export const ShareDialog = ({ item, onShare, onUnshare, t }: {
@@ -184,7 +184,8 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
     t,
     getDateFnsLocale,
     shareItem,
-    unshareItem
+    unshareItem,
+    cardNumber
 }) => {
     const isTask = 'taskNumber' in item;
     const [showCompletionDialog, setShowCompletionDialog] = useState(false);
@@ -256,6 +257,11 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                         )}
                                     </div>
                                 ) : null}
+                                {cardNumber !== undefined && (
+                                    <div className="flex items-center justify-center bg-muted/80 text-muted-foreground font-mono text-[10px] min-w-[20px] h-5 px-1 rounded-md border shrink-0">
+                                        {cardNumber}
+                                    </div>
+                                )}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
                                 <p
                                     className={cn("font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors", item.isDone && "line-through text-muted-foreground")}
@@ -426,7 +432,8 @@ export const ItemCard = React.memo<ItemCardProps>(ItemCardComponent, (prevProps,
         prevProps.item.name === nextProps.item.name &&
         prevProps.item.detail === nextProps.item.detail &&
         prevProps.item.updatedAt.getTime() === nextProps.item.updatedAt.getTime() &&
-        prevProps.isSelected === nextProps.isSelected
+        prevProps.isSelected === nextProps.isSelected &&
+        prevProps.cardNumber === nextProps.cardNumber
     );
 });
 

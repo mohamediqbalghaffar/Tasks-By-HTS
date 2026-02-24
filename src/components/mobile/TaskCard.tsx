@@ -20,9 +20,10 @@ interface TaskCardProps {
     onEdit: (task: Task) => void;
     t: (key: string) => string;
     getDateFnsLocale: () => any;
+    cardNumber?: number;
 }
 
-export function TaskCard({ task, onComplete, onDelete, onEdit, t, getDateFnsLocale }: TaskCardProps) {
+export function TaskCard({ task, onComplete, onDelete, onEdit, t, getDateFnsLocale, cardNumber }: TaskCardProps) {
     const isExpired = task.reminder && new Date(task.reminder) < new Date() && !task.isDone;
     const [showCompletionDialog, setShowCompletionDialog] = React.useState(false);
 
@@ -110,6 +111,11 @@ export function TaskCard({ task, onComplete, onDelete, onEdit, t, getDateFnsLoca
                 <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-foreground font-medium">
                     #{task.taskNumber}
                 </span>
+                {cardNumber !== undefined && (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/80 text-muted-foreground font-mono font-medium">
+                        {cardNumber}
+                    </span>
+                )}
                 <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/50 text-muted-foreground border-transparent">
                     {formatDistanceToNowStrict(new Date(task.createdAt), {
                         addSuffix: true,

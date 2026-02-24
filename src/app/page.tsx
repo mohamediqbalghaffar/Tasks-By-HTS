@@ -438,8 +438,9 @@ export default function Home() {
                 {/* Mobile Item List */}
                 <ScrollArea className="flex-1 px-4">
                     <div className="pb-4 space-y-3">
-                        {itemsToDisplay.length > 0 ? itemsToDisplay.map(item => {
+                        {itemsToDisplay.length > 0 ? itemsToDisplay.map((item, index) => {
                             const isTaskItem = 'taskNumber' in item || (item as any).originalItemType === 'task';
+                            const cardNumber = itemsToDisplay.length - index;
                             return isTaskItem ? (
                                 <TaskCard
                                     key={item.id}
@@ -449,6 +450,7 @@ export default function Home() {
                                     onEdit={(task) => router.push(`/add?tab=task&edit=${task.id}`)}
                                     t={t}
                                     getDateFnsLocale={getDateFnsLocale}
+                                    cardNumber={cardNumber}
                                 />
                             ) : (
                                 <LetterCard
@@ -459,6 +461,7 @@ export default function Home() {
                                     onEdit={(letter) => router.push(`/add?tab=letter&edit=${letter.id}`)}
                                     t={t}
                                     getDateFnsLocale={getDateFnsLocale}
+                                    cardNumber={cardNumber}
                                 />
                             );
                         }) : (
@@ -964,7 +967,7 @@ export default function Home() {
             {/* Item List */}
             <ScrollArea className="flex-grow px-4 pt-4">
                 <div className="space-y-2 pr-2 pb-4">
-                    {itemsToDisplay.length > 0 ? itemsToDisplay.map(item => (
+                    {itemsToDisplay.length > 0 ? itemsToDisplay.map((item, index) => (
                         <ItemCard
                             key={item.id}
                             item={item}
@@ -976,6 +979,7 @@ export default function Home() {
                             t={t}
                             getDateFnsLocale={getDateFnsLocale}
                             unshareItem={unshareItem}
+                            cardNumber={itemsToDisplay.length - index}
                         />
                     )) : (
                         <div className="flex flex-col items-center py-16 text-muted-foreground gap-3">

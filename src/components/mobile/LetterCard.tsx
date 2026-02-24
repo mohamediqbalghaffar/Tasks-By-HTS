@@ -21,9 +21,10 @@ interface LetterCardProps {
     onEdit: (letter: ApprovalLetter) => void;
     t: (key: string) => string;
     getDateFnsLocale: () => any;
+    cardNumber?: number;
 }
 
-export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFnsLocale }: LetterCardProps) {
+export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFnsLocale, cardNumber }: LetterCardProps) {
     const isExpired = letter.reminder && new Date(letter.reminder) < new Date() && !letter.isDone;
     const [showCompletionDialog, setShowCompletionDialog] = React.useState(false);
 
@@ -149,6 +150,11 @@ export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFns
                 <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted text-foreground font-medium">
                     #{letter.letterNumber}
                 </span>
+                {cardNumber !== undefined && (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/80 text-muted-foreground font-mono font-medium">
+                        {cardNumber}
+                    </span>
+                )}
                 <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/50 text-muted-foreground border-transparent">
                     {formatDistanceToNowStrict(new Date(letter.createdAt), {
                         addSuffix: true,
