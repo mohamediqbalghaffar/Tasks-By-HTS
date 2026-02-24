@@ -331,8 +331,6 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                         />
                         <div className="flex-grow space-y-1 text-right min-w-0">
                             <div className="flex justify-end items-center gap-2">
-                                {/* Shared Indicator */}
-                                {/* Shared Indicator */}
                                 {(item.sharedCount && item.sharedCount > 0) || (item as any)._isShared ? (
                                     <div className={cn(
                                         "flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full shrink-0",
@@ -345,6 +343,11 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                         )}
                                     </div>
                                 ) : null}
+                                {cardNumber !== undefined && (
+                                    <div className="flex items-center justify-center bg-muted/80 text-muted-foreground font-mono text-[10px] min-w-[20px] h-5 px-1 rounded-md border shrink-0">
+                                        {cardNumber}
+                                    </div>
+                                )}
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
                                 <p
                                     className={cn("font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors", item.isDone && "line-through text-muted-foreground")}
