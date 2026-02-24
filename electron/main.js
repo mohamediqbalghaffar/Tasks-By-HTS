@@ -2,6 +2,10 @@ const { app, BrowserWindow, screen, ipcMain } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
 
+console.log('Electron starting...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('isDev:', isDev);
+
 let mainWindow;
 let bubbleWindow;
 
@@ -28,35 +32,51 @@ function createMainWindow() {
 
     mainWindow.on('closed', () => {
         mainWindow = null;
-        if (bubbleWindow) bubbleWindow.close();
+        console.log('Main window closed');
+        // if (bubbleWindow) bubbleWindow.close();
     });
 }
 
 function createBubbleWindow() {
     const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
 
+    // Default to a safe corner if screen dimensions are wonky
+    const winX = screenWidth ? screenWidth - 270 : 100;
+    const winY = screenHeight ? screenHeight - 270 : 100;
+
     bubbleWindow = new BrowserWindow({
-        width: 250, // Slightly larger for expansion
+        width: 250,
         height: 250,
-        x: screenWidth - 270,
-        y: screenHeight - 270,
+        x: winX,
+        y: winY,
         frame: false,
         transparent: true,
         alwaysOnTop: true,
         resizable: false,
         hasShadow: false,
-        skipTaskbar: true,
+        show: true, // Show immediately for debugging
+        skipTaskbar: false, // Keep in taskbar for now so user can see it's running
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
         },
     });
 
+    // Bring to front
+    bubbleWindow.setAlwaysOnTop(true, 'screen-saver');
+    bubbleWindow.setVisibleOnAllWorkspaces(true);
+
     const bubbleUrl = isDev
         ? 'http://localhost:3000/floating-bubble'
         : `file://${path.join(__dirname, '../out/floating-bubble.html')}`;
 
     bubbleWindow.loadURL(bubbleUrl);
+    console.log('Bubble window loading:', bubbleUrl);
+
+    bubbleWindow.once('ready-to-show', () => {
+        console.log('Bubble window ready to show');
+        bubbleWindow.show();
+    });
 
     // Set ignore mouse events when only the bubble (circle) is visible if needed
     // bubbleWindow.setIgnoreMouseEvents(true, { forward: true });
@@ -71,10 +91,10 @@ app.on('ready', () => {
     createBubbleWindow();
 });
 
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+app.on('window-all-closed', (e) => {
+    // Prevent app from quitting for testing purposes
+    // app.quit(); 
+    console.log('All windows closed event triggered');
 });
 
 app.on('activate', () => {
