@@ -46,8 +46,8 @@ export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFns
         <div className={cn(
             "bg-card rounded-xl p-4 mb-3 border shadow-sm active:shadow-md transition-all",
             letter.isDone && "opacity-60 bg-muted/50",
-            isExpired && "border-l-4 border-l-destructive border-y border-r"
-        )}>
+            isExpired && "border-r-4 border-r-destructive border-y border-l"
+        )} dir="rtl">
             <div className="flex justify-between items-start gap-3 mb-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                     <button
@@ -59,7 +59,7 @@ export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFns
                                 setShowCompletionDialog(true);
                             }
                         }}
-                        className="mt-0.5 shrink-0 h-11 w-11 -ml-2 -mt-2 flex items-center justify-center rounded-full active:bg-muted/50 transition-colors"
+                        className="mt-0.5 shrink-0 h-11 w-11 -mr-2 -mt-2 flex items-center justify-center rounded-full active:bg-muted/50 transition-colors"
                         aria-label={letter.isDone ? t('markAsActive') : t('markAsDone')}
                     >
                         {letter.isDone ? (
@@ -111,7 +111,7 @@ export function LetterCard({ letter, onComplete, onDelete, onEdit, t, getDateFns
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button
-                            className="h-11 w-11 -mr-2 -mt-2 flex items-center justify-center text-muted-foreground rounded-full active:bg-muted transition-colors"
+                            className="h-11 w-11 -ml-2 -mt-2 flex items-center justify-center text-muted-foreground rounded-full active:bg-muted transition-colors"
                             aria-label={t('actions')}
                         >
                             <MoreVertical className="h-5 w-5" />
