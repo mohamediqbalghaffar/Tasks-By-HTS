@@ -220,20 +220,28 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
         <Card
             onClick={() => onCardClick(item)}
             className={cn(
-                "cursor-pointer transition-all hover:shadow-lg relative group overflow-hidden",
+                "cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 relative group overflow-hidden border-0",
+                "glass-card backdrop-blur-xl bg-white/5 dark:bg-black/20",
                 isSelected
-                    ? "ring-2 ring-primary shadow-md shadow-primary/20"
-                    : "",
+                    ? "ring-2 ring-primary bg-primary/5 shadow-[0_0_25px_rgba(var(--primary),0.2)]"
+                    : "hover:bg-white/10 dark:hover:bg-white/5",
                 item.isUrgent && !item.isDone && "urgent-pulse-glow",
                 item.reminder && !item.isDone && new Date(item.reminder) < new Date() && "expired-pulse-glow",
-                item.isDone && "opacity-60"
+                item.isDone && "opacity-60 grayscale-[0.5]"
             )}
         >
-            {/* Priority color bar on left */}
-            <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-md bg-gradient-to-b", priorityColor)} />
+            {/* Refined Priority Indicator */}
+            <div className={cn(
+                "absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2 bg-gradient-to-b",
+                priorityColor
+            )} />
+            <div className={cn(
+                "absolute left-0 top-0 bottom-0 w-4 opacity-0 group-hover:opacity-10 shadow-[8px_0_15px_-5px_transparent] bg-gradient-to-r transition-all duration-300",
+                item.priority <= 3 ? "from-emerald-400" : item.priority <= 6 ? "from-amber-400" : "from-rose-400"
+            )} />
 
             {isTask ? (
-                <CardContent className="p-3 pl-5 flex items-start justify-between gap-4">
+                <CardContent className="p-4 pl-6 flex items-center justify-between gap-6">
                     <div className="flex items-start gap-4 flex-grow min-w-0">
                         <Checkbox
                             checked={item.isDone}
@@ -243,7 +251,6 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                         />
                         <div className="flex-grow space-y-0.5 text-right min-w-0">
                             <div className="flex justify-end items-center gap-2">
-                                {/* Shared Indicator */}
                                 {/* Shared Indicator */}
                                 {(item.sharedCount && item.sharedCount > 0) || (item as any)._isShared ? (
                                     <div className={cn(
@@ -258,7 +265,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                     </div>
                                 ) : null}
                                 {cardNumber !== undefined && (
-                                    <div className="flex items-center justify-center bg-muted/80 text-muted-foreground font-mono text-[10px] min-w-[20px] h-5 px-1 rounded-md border shrink-0">
+                                    <div className="flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/40 text-primary-foreground dark:text-primary font-mono text-[11px] font-bold min-w-[24px] h-6 px-1.5 rounded-lg border border-primary/20 shadow-inner group-hover:scale-110 transition-transform shrink-0">
                                         {cardNumber}
                                     </div>
                                 )}
@@ -274,31 +281,31 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                             <p className="text-xs text-muted-foreground break-words truncate pr-1" title={item.detail}>{item.detail}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center p-1 bg-white/5 dark:bg-black/20 rounded-xl border border-white/10 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="h-9 w-9 text-destructive hover:bg-destructive/10 transition-colors"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Trash2 className="h-4.5 w-4.5" />
                                 </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="glass-card">
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>{t('confirmDeleteTitle')}</AlertDialogTitle>
-                                    <AlertDialogDescription>{t('confirmDeleteTaskDescription')}</AlertDialogDescription>
+                                    <AlertDialogTitle className="text-xl font-bold">{t('confirmDeleteTitle')}</AlertDialogTitle>
+                                    <AlertDialogDescription className="text-base">{t('confirmDeleteTaskDescription')}</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                    <AlertDialogCancel className="rounded-xl">{t('cancel')}</AlertDialogCancel>
                                     <AlertDialogAction
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleDelete(item.id, 'task');
                                         }}
-                                        className="bg-destructive hover:bg-destructive/90"
+                                        className="bg-destructive hover:bg-destructive/90 rounded-xl"
                                     >
                                         {t('confirmDelete')}
                                     </AlertDialogAction>
@@ -306,22 +313,16 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                             </AlertDialogContent>
                         </AlertDialog>
                         <ShareDialog item={item} onShare={shareItem} onUnshare={unshareItem} t={t} />
-                        <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 pt-1">
-                            <span>{format(item.createdAt, 'dd/MM/yyyy')}</span>
-                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                                {formatDistanceToNowStrict(item.createdAt, { locale: getDateFnsLocale(), addSuffix: true })}
-                            </span>
-                        </div>
                     </div>
-                    <CompletionDialog
-                        isOpen={showCompletionDialog}
-                        onOpenChange={setShowCompletionDialog}
-                        onConfirm={(date) => toggleIsDone(item.id, isTask ? 'task' : 'letter', date)}
-                        t={t}
-                    />
+                    <div className="flex flex-col items-end gap-1.5 text-xs text-muted-foreground shrink-0 group-hover:opacity-0 transition-opacity">
+                        <span className="font-medium">{format(item.createdAt, 'dd/MM/yyyy')}</span>
+                        <span className="text-[10px] items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-semibold uppercase tracking-wider">
+                            {formatDistanceToNowStrict(item.createdAt, { locale: getDateFnsLocale(), addSuffix: true })}
+                        </span>
+                    </div>
                 </CardContent>
             ) : (
-                <CardContent className="p-3 pl-5 flex items-start justify-between gap-4">
+                <CardContent className="p-4 pl-6 flex items-center justify-between gap-6">
                     <div className="flex items-start gap-4 flex-grow min-w-0">
                         <Checkbox
                             checked={item.isDone}
@@ -331,6 +332,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                         />
                         <div className="flex-grow space-y-1 text-right min-w-0">
                             <div className="flex justify-end items-center gap-2">
+                                {/* Shared Indicator */}
                                 {(item.sharedCount && item.sharedCount > 0) || (item as any)._isShared ? (
                                     <div className={cn(
                                         "flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full shrink-0",
@@ -344,7 +346,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                     </div>
                                 ) : null}
                                 {cardNumber !== undefined && (
-                                    <div className="flex items-center justify-center bg-muted/80 text-muted-foreground font-mono text-[10px] min-w-[20px] h-5 px-1 rounded-md border shrink-0">
+                                    <div className="flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/40 text-primary-foreground dark:text-primary font-mono text-[11px] font-bold min-w-[24px] h-6 px-1.5 rounded-lg border border-primary/20 shadow-inner group-hover:scale-110 transition-transform shrink-0">
                                         {cardNumber}
                                     </div>
                                 )}
@@ -373,31 +375,31 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center p-1 bg-white/5 dark:bg-black/20 rounded-xl border border-white/10 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="h-9 w-9 text-destructive hover:bg-destructive/10 transition-colors"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Trash2 className="h-4.5 w-4.5" />
                                 </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="glass-card">
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>{t('confirmDeleteTitle')}</AlertDialogTitle>
-                                    <AlertDialogDescription>{t('confirmDeleteLetterDescription')}</AlertDialogDescription>
+                                    <AlertDialogTitle className="text-xl font-bold">{t('confirmDeleteTitle')}</AlertDialogTitle>
+                                    <AlertDialogDescription className="text-base">{t('confirmDeleteLetterDescription')}</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                    <AlertDialogCancel className="rounded-xl">{t('cancel')}</AlertDialogCancel>
                                     <AlertDialogAction
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleDelete(item.id, 'letter');
                                         }}
-                                        className="bg-destructive hover:bg-destructive/90"
+                                        className="bg-destructive hover:bg-destructive/90 rounded-xl"
                                     >
                                         {t('confirmDelete')}
                                     </AlertDialogAction>
@@ -405,21 +407,21 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                             </AlertDialogContent>
                         </AlertDialog>
                         <ShareDialog item={item} onShare={shareItem} onUnshare={unshareItem} t={t} />
-                        <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 pt-1">
-                            <span>{format(item.createdAt, 'dd/MM/yyyy')}</span>
-                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                                {formatDistanceToNowStrict(item.createdAt, { locale: getDateFnsLocale(), addSuffix: true })}
-                            </span>
-                        </div>
                     </div>
-                    <CompletionDialog
-                        isOpen={showCompletionDialog}
-                        onOpenChange={setShowCompletionDialog}
-                        onConfirm={(date) => toggleIsDone(item.id, isTask ? 'task' : 'letter', date)}
-                        t={t}
-                    />
+                    <div className="flex flex-col items-end gap-1.5 text-xs text-muted-foreground shrink-0 group-hover:opacity-0 transition-opacity">
+                        <span className="font-medium">{format(item.createdAt, 'dd/MM/yyyy')}</span>
+                        <span className="text-[10px] items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-semibold uppercase tracking-wider">
+                            {formatDistanceToNowStrict(item.createdAt, { locale: getDateFnsLocale(), addSuffix: true })}
+                        </span>
+                    </div>
                 </CardContent>
             )}
+            <CompletionDialog
+                isOpen={showCompletionDialog}
+                onOpenChange={setShowCompletionDialog}
+                onConfirm={(date) => toggleIsDone(item.id, isTask ? 'task' : 'letter', date)}
+                t={t}
+            />
         </Card>
     );
 };
