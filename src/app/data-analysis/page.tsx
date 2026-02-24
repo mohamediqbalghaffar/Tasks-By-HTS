@@ -569,12 +569,33 @@ export default function DataAnalysisPage() {
                         </CardHeader>
                         <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={statusData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
-                                    <YAxis dataKey="name" type="category" width={60} stroke="hsl(var(--muted-foreground))" />
-                                    <Tooltip content={<DataChartTooltip />} cursor={{ fill: 'hsl(var(--accent) / 0.1)' }} />
-                                    <Bar dataKey="value" name={showTasks ? t('tasksTab') : t('lettersTab')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={35} isAnimationActive={true} animationDuration={800} />
+                                <BarChart data={statusData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                    <defs>
+                                        <linearGradient id="statusGradient" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border) / 0.3)" />
+                                    <XAxis type="number" hide />
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        width={120}
+                                        tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip content={<DataChartTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.05)', radius: 8 }} />
+                                    <Bar
+                                        dataKey="value"
+                                        name={showTasks ? t('tasksTab') : t('lettersTab')}
+                                        fill="url(#statusGradient)"
+                                        radius={[0, 10, 10, 0]}
+                                        barSize={45}
+                                        isAnimationActive={true}
+                                        animationDuration={1000}
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -635,7 +656,7 @@ export default function DataAnalysisPage() {
                                     <BarChart
                                         data={departmentData}
                                         layout="vertical"
-                                        margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+                                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                                         barGap={8}
                                     >
                                         <defs>
@@ -653,7 +674,7 @@ export default function DataAnalysisPage() {
                                             dataKey="name"
                                             type="category"
                                             tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
-                                            width={100}
+                                            width={250}
                                             axisLine={false}
                                             tickLine={false}
                                         />
@@ -683,7 +704,7 @@ export default function DataAnalysisPage() {
                                             name={t('completedCount')}
                                             stackId="a"
                                             fill="url(#completedGradient)"
-                                            radius={[0, 6, 6, 0]}
+                                            radius={[0, 10, 10, 0]}
                                             barSize={32}
                                             isAnimationActive={true}
                                             animationDuration={1200}
