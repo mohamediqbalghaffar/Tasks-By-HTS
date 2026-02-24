@@ -366,6 +366,16 @@ export default function DataAnalysisPage() {
         return null;
     }, []);
 
+    const [screenWidth, setScreenWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+    React.useEffect(() => {
+        const handleResize = () => setScreenWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const isMobile = screenWidth < 768;
+
     const DataChartTooltip = React.useCallback(({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
@@ -588,10 +598,14 @@ export default function DataAnalysisPage() {
                         </CardHeader>
                         <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={statusData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                <BarChart
+                                    data={statusData}
+                                    layout="vertical"
+                                    margin={{ top: 5, right: isMobile ? 10 : 30, left: 10, bottom: 5 }}
+                                >
                                     <defs>
                                         <linearGradient id="statusGradient" x1="0" y1="0" x2="1" y2="0">
-                                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.6} />
                                             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
                                         </linearGradient>
                                     </defs>
@@ -600,8 +614,12 @@ export default function DataAnalysisPage() {
                                     <YAxis
                                         dataKey="name"
                                         type="category"
-                                        width={120}
-                                        tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 700 }}
+                                        width={isMobile ? 80 : 120}
+                                        tick={{
+                                            fill: 'currentColor',
+                                            fontSize: isMobile ? 11 : 13,
+                                            fontWeight: 700
+                                        }}
                                         className="text-foreground"
                                         axisLine={false}
                                         tickLine={false}
@@ -684,16 +702,15 @@ export default function DataAnalysisPage() {
                                     <BarChart
                                         data={departmentData}
                                         layout="vertical"
-                                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                                        barGap={8}
+                                        margin={{ top: 5, right: isMobile ? 10 : 30, left: 10, bottom: 5 }}
                                     >
                                         <defs>
                                             <linearGradient id="activeGradient" x1="0" y1="0" x2="1" y2="0">
-                                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                                                <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.6} />
+                                                <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={1} />
                                             </linearGradient>
                                             <linearGradient id="completedGradient" x1="0" y1="0" x2="1" y2="0">
-                                                <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8} />
+                                                <stop offset="0%" stopColor="hsl(var(--chart-2))" stopOpacity={0.6} />
                                                 <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={1} />
                                             </linearGradient>
                                         </defs>
@@ -701,9 +718,13 @@ export default function DataAnalysisPage() {
                                         <YAxis
                                             dataKey="name"
                                             type="category"
-                                            tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 700 }}
+                                            tick={{
+                                                fill: 'currentColor',
+                                                fontSize: isMobile ? 10 : 13,
+                                                fontWeight: 700
+                                            }}
                                             className="text-foreground"
-                                            width={250}
+                                            width={isMobile ? 100 : 250}
                                             axisLine={false}
                                             tickLine={false}
                                             orientation="right"
