@@ -111,21 +111,25 @@ export function FilterModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-            {/* Backdrop */}
+        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+            {/* Enhanced Backdrop with deeper blur and darker tint */}
             <div
-                className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity"
+                className="fixed inset-0 bg-black/40 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
                 onClick={onClose}
             />
 
-            {/* Modal */}
-            <div className="relative w-full max-w-lg bg-card border-t sm:border rounded-t-xl sm:rounded-xl shadow-lg animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b shrink-0">
-                    <h2 className="text-lg font-semibold">{t('filterAndSort')}</h2>
+            {/* Modal - Modern Glassmorphism */}
+            <div className={cn(
+                "relative w-full max-w-lg glass-card border-x-0 sm:border-x border-b-0 sm:border-b border-t sm:rounded-3xl rounded-t-[2.5rem] shadow-2xl transition-all duration-500",
+                "backdrop-blur-3xl bg-white/5 dark:bg-black/30",
+                "animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 flex flex-col max-h-[92vh] mb-0 sm:mb-4 overflow-hidden"
+            )}>
+                {/* Header - Glassy Sub-section */}
+                <div className="flex items-center justify-between p-5 border-b border-white/10 shrink-0 bg-white/5 dark:bg-black/20 backdrop-blur-lg">
+                    <h2 className="text-xl font-bold tracking-tight">{t('filterAndSort')}</h2>
                     <button
                         onClick={onClose}
-                        className="h-10 w-10 flex items-center justify-center rounded-full active:bg-muted transition-colors"
+                        className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 dark:bg-black/20 active:scale-90 transition-all border border-white/10"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -135,18 +139,18 @@ export function FilterModal({
                 <ScrollArea className="flex-1 overflow-y-auto">
                     <div className="space-y-6 p-4">
                         {/* Search */}
-                        <div className="space-y-2">
-                            <Label htmlFor="mobile-search">{t('searchPlaceholder')}</Label>
+                        <div className="space-y-3">
+                            <Label htmlFor="mobile-search" className="text-sm font-semibold px-1">{t('searchPlaceholder')}</Label>
                             <Input
                                 id="mobile-search"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t('searchPlaceholder')}
-                                className="h-11"
+                                className="h-12 glass-input rounded-2xl border-white/10 focus:ring-primary/30"
                             />
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-white/5" />
 
                         {/* Status */}
                         <div>
@@ -254,13 +258,13 @@ export function FilterModal({
                         <Separator />
 
                         {/* Date Range */}
-                        <div className="space-y-2">
-                            <Label className="text-base font-semibold">{t('dateRange')}</Label>
+                        <div className="space-y-3">
+                            <Label className="text-sm font-semibold px-1">{t('dateRange')}</Label>
                             <Select value={filterDatePreset} onValueChange={setFilterDatePreset}>
-                                <SelectTrigger className="w-full h-11">
+                                <SelectTrigger className="w-full h-12 glass-input rounded-2xl border-white/10">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="glass-card backdrop-blur-3xl">
                                     <SelectItem value="all">{t('all')}</SelectItem>
                                     <SelectItem value="today">{t('today')}</SelectItem>
                                     <SelectItem value="thisWeek">{t('thisWeek')}</SelectItem>
@@ -418,12 +422,12 @@ export function FilterModal({
                     </div>
                 </ScrollArea>
 
-                {/* Footer */}
-                <div className="border-t p-4 flex gap-3 shrink-0 bg-card">
+                {/* Footer - Glassy Sub-section with premium buttons */}
+                <div className="border-t border-white/10 p-5 pb-8 sm:pb-5 flex gap-3 shrink-0 bg-white/5 dark:bg-black/40 backdrop-blur-xl">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={handleReset}
-                        className="flex-1 h-12"
+                        className="flex-1 h-14 rounded-2xl bg-white/5 dark:bg-black/20 hover:bg-white/10 dark:hover:bg-white/5 border border-white/10 transition-all"
                         disabled={activeFiltersCount === 0}
                     >
                         <RotateCcw className="h-4 w-4 mr-2" />
@@ -431,7 +435,7 @@ export function FilterModal({
                     </Button>
                     <Button
                         onClick={handleApply}
-                        className="flex-1 h-12"
+                        className="flex-1 h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all font-bold active:scale-95"
                     >
                         {t('apply')} {activeFiltersCount > 0 && `(${activeFiltersCount})`}
                     </Button>
