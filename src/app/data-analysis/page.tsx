@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { ListChecks, CheckCircle, AlertTriangle, BarChartHorizontal } from 'lucide-react';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
 import { subDays, subMonths, isWithinInterval, format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const CustomDot = (props: any) => {
     const { cx, cy, payload } = props;
@@ -357,8 +358,8 @@ export default function DataAnalysisPage() {
         if (active && payload && payload.length) {
             const data = payload[0].payload;
             return (
-                <div className="p-2 text-sm rounded-md glass-card">
-                    <p className="font-bold text-primary">{`${data.name}`}</p>
+                <div className="p-3 text-sm rounded-xl glass-card border border-white/20 shadow-2xl backdrop-blur-3xl bg-white/10 dark:bg-black/40">
+                    <p className="font-bold text-primary mb-2 text-base border-b border-white/20 pb-1">{data.name}</p>
                 </div>
             );
         }
@@ -416,15 +417,33 @@ export default function DataAnalysisPage() {
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="p-4 md:p-8 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4" dir="rtl">
                 <div>
-                    <h1 className="text-3xl font-bold">{t('analysisPageTitle')}</h1>
-                    <p className="text-muted-foreground">{t('analysisPageDescription')}</p>
+                    <h1 className="text-3xl font-bold text-foreground drop-shadow-sm">{t('analysisPageTitle')}</h1>
+                    <p className="text-muted-foreground font-medium">{t('analysisPageDescription')}</p>
                 </div>
-                <div className="flex items-center bg-muted p-1 rounded-lg self-start md:self-center">
-                    <Button variant={showTasks ? "default" : "ghost"} onClick={() => setShowTasks(true)} className="px-3 py-1 h-8 text-sm">{t('tasksTab')}</Button>
-                    <Button variant={!showTasks ? "default" : "ghost"} onClick={() => setShowTasks(false)} className="px-3 py-1 h-8 text-sm">{t('lettersTab')}</Button>
+                <div className="flex items-center bg-white/10 dark:bg-black/20 p-1 rounded-xl glass-card border border-white/10 self-start md:self-center">
+                    <Button
+                        variant={showTasks ? "default" : "ghost"}
+                        onClick={() => setShowTasks(true)}
+                        className={cn(
+                            "px-4 py-1.5 h-9 text-sm font-bold transition-all duration-300 rounded-lg",
+                            showTasks ? "shadow-lg shadow-primary/20" : "hover:bg-white/10"
+                        )}
+                    >
+                        {t('tasksTab')}
+                    </Button>
+                    <Button
+                        variant={!showTasks ? "default" : "ghost"}
+                        onClick={() => setShowTasks(false)}
+                        className={cn(
+                            "px-4 py-1.5 h-9 text-sm font-bold transition-all duration-300 rounded-lg",
+                            !showTasks ? "shadow-lg shadow-primary/20" : "hover:bg-white/10"
+                        )}
+                    >
+                        {t('lettersTab')}
+                    </Button>
                 </div>
             </div>
 
@@ -562,10 +581,10 @@ export default function DataAnalysisPage() {
 
                 {/* Status Overview - Fixed Size */}
                 <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants}>
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card className="hover:shadow-lg transition-shadow border-none glass-card bg-white/10 dark:bg-black/20 backdrop-blur-xl">
                         <CardHeader>
-                            <CardTitle>{t('itemStatusOverview')}</CardTitle>
-                            <CardDescription>{showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
+                            <CardTitle className="text-foreground">{t('itemStatusOverview')}</CardTitle>
+                            <CardDescription className="text-muted-foreground/80">{showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
                         </CardHeader>
                         <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
@@ -576,22 +595,31 @@ export default function DataAnalysisPage() {
                                             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={1} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border) / 0.3)" />
-                                    <XAxis type="number" hide />
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--foreground) / 0.1)" />
+                                    <XAxis type="number" hide reversed={true} />
                                     <YAxis
                                         dataKey="name"
                                         type="category"
                                         width={120}
-                                        tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
+                                        tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 700 }}
+                                        className="text-foreground"
                                         axisLine={false}
                                         tickLine={false}
+                                        orientation="right"
                                     />
-                                    <Tooltip content={<DataChartTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.05)', radius: 8 }} />
+                                    <Tooltip content={<DataChartTooltip />} cursor={{ fill: 'hsl(var(--foreground) / 0.05)', radius: 8 }} />
+                                    <Legend
+                                        verticalAlign="top"
+                                        align="left"
+                                        iconType="circle"
+                                        wrapperStyle={{ paddingBottom: '20px', fontWeight: 600 }}
+                                        formatter={(value) => <span className="text-foreground">{value}</span>}
+                                    />
                                     <Bar
                                         dataKey="value"
                                         name={showTasks ? t('tasksTab') : t('lettersTab')}
                                         fill="url(#statusGradient)"
-                                        radius={[0, 10, 10, 0]}
+                                        radius={[10, 0, 0, 10]}
                                         barSize={45}
                                         isAnimationActive={true}
                                         animationDuration={1000}
@@ -604,10 +632,10 @@ export default function DataAnalysisPage() {
 
                 {/* Time Distribution - Fixed Size */}
                 <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants}>
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card className="hover:shadow-lg transition-shadow border-none glass-card bg-white/10 dark:bg-black/20 backdrop-blur-xl">
                         <CardHeader>
-                            <CardTitle>{t('timeToCompleteDistribution')}</CardTitle>
-                            <CardDescription>{t('activeCount')} - {showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
+                            <CardTitle className="text-foreground">{t('timeToCompleteDistribution')}</CardTitle>
+                            <CardDescription className="text-muted-foreground/80">{t('activeCount')} - {showTasks ? t('tasksTab') : t('lettersTab')}</CardDescription>
                         </CardHeader>
                         <CardContent className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
@@ -642,14 +670,14 @@ export default function DataAnalysisPage() {
                 {/* Departmental Load - Stacked Bar Chart */}
                 {!showTasks && departmentData.length > 0 && (
                     <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className="lg:col-span-2">
-                        <Card className="hover:shadow-lg transition-shadow overflow-hidden relative border-none glass-card bg-opacity-10">
+                        <Card className="hover:shadow-lg transition-shadow overflow-hidden relative border-none glass-card bg-white/10 dark:bg-black/20 backdrop-blur-xl">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl -z-10" />
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
+                                <CardTitle className="flex items-center gap-2 text-foreground">
                                     <BarChartHorizontal className="h-5 w-5 text-primary" />
                                     {t('departmentalLoad')}
                                 </CardTitle>
-                                <CardDescription>{t('departmentalLoadDesc')}</CardDescription>
+                                <CardDescription className="text-muted-foreground/80">{t('departmentalLoadDesc')}</CardDescription>
                             </CardHeader>
                             <CardContent className="h-[450px] pb-12">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -669,25 +697,28 @@ export default function DataAnalysisPage() {
                                                 <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={1} />
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border) / 0.3)" />
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--foreground) / 0.1)" />
                                         <YAxis
                                             dataKey="name"
                                             type="category"
-                                            tick={{ fill: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 500 }}
+                                            tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 700 }}
+                                            className="text-foreground"
                                             width={250}
                                             axisLine={false}
                                             tickLine={false}
+                                            orientation="right"
                                         />
-                                        <XAxis type="number" hide />
+                                        <XAxis type="number" hide reversed={true} />
                                         <Tooltip
                                             content={<DataChartTooltip />}
-                                            cursor={{ fill: 'hsl(var(--primary) / 0.05)', radius: 8 }}
+                                            cursor={{ fill: 'hsl(var(--foreground) / 0.05)', radius: 8 }}
                                         />
                                         <Legend
                                             verticalAlign="top"
                                             align="right"
                                             iconType="circle"
-                                            wrapperStyle={{ paddingBottom: '20px' }}
+                                            wrapperStyle={{ paddingBottom: '20px', fontWeight: 600 }}
+                                            formatter={(value) => <span className="text-foreground">{value}</span>}
                                         />
                                         <Bar
                                             dataKey="active"
@@ -704,7 +735,7 @@ export default function DataAnalysisPage() {
                                             name={t('completedCount')}
                                             stackId="a"
                                             fill="url(#completedGradient)"
-                                            radius={[0, 10, 10, 0]}
+                                            radius={[10, 0, 0, 10]}
                                             barSize={32}
                                             isAnimationActive={true}
                                             animationDuration={1200}
