@@ -21,7 +21,7 @@ interface ItemCardProps {
     onCardClick: (item: Task | ApprovalLetter) => void;
     toggleIsDone: (id: string, type: 'task' | 'letter', date?: Date) => void;
     handleDelete: (id: string, type: 'task' | 'letter') => void;
-    t: (key: string) => string;
+    t: (key: string, params?: Record<string, string | number>) => string;
     getDateFnsLocale: () => any;
     shareItem: (item: Task | ApprovalLetter, code: number, force?: boolean) => Promise<'success' | 'already_shared' | 'user_not_found' | 'error'>;
     unshareItem?: (itemId: string, itemType: 'task' | 'letter', targetUserId: string) => Promise<boolean>;
@@ -102,7 +102,7 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                                         type="number"
                                         value={code}
                                         onChange={e => setCode(e.target.value)}
-                                        placeholder="e.g. 12345"
+                                        placeholder={t('shareCodePlaceholder') || "بۆ نموونە ١٢٣٤٥"}
                                         className="pl-11 pr-4 h-12 text-lg font-medium tracking-wide border-2 border-gray-300 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                         autoFocus
                                     />
@@ -110,7 +110,7 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                                         <Users className="h-5 w-5" />
                                     </div>
                                 </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{t('shareCodeHint')}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{t('shareCodeHint') || "کۆدی هاوبەشکردنی ئەو کەسە بنووسە کە دەتەوێت بابەتەکەی لەگەڵ هاوبەش بکەیت"}</p>
                             </div>
                         </div>
                         <div className="flex gap-3">
@@ -141,9 +141,9 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                             <div className="mx-auto w-14 h-14 rounded-full bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-500 flex items-center justify-center mb-4">
                                 <AlertTriangle className="h-7 w-7" />
                             </div>
-                            <DialogTitle className="text-center text-2xl font-bold text-gray-900 dark:text-white">{t('alreadySharedTitle') || 'Already Shared'}</DialogTitle>
+                            <DialogTitle className="text-center text-2xl font-bold text-gray-900 dark:text-white">{t('alreadySharedTitle')}</DialogTitle>
                             <DialogDescription className="text-center text-base text-gray-700 dark:text-gray-300">
-                                {t('alreadySharedDesc') || 'This item has already been shared with this user. Do you want to share it again?'}
+                                {t('alreadySharedDesc')}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex gap-3 mt-6">
@@ -164,7 +164,7 @@ export const ShareDialog = ({ item, onShare, onUnshare, t }: {
                                 ) : (
                                     <Share2 className="mr-2 h-4 w-4" />
                                 )}
-                                {t('shareAgain') || 'Share Again'}
+                                {t('shareAgain')}
                             </Button>
                         </div>
                     </>
@@ -194,8 +194,8 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
         e.stopPropagation();
         navigator.clipboard.writeText(text);
         toast({
-            title: t('copied') || "Copied",
-            description: `${label} ${t('copiedToClipboard') || "copied to clipboard"}`,
+            title: t('copied'),
+            description: `${label} ${t('copiedToClipboard')}`,
             duration: 2000,
         });
     };
@@ -248,7 +248,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                     <div className={cn(
                                         "flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full shrink-0",
                                         (item as any)._isShared ? "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" : "text-primary bg-primary/10"
-                                    )} title={(item as any)._isShared ? t('sharedWithMe') : t('sharedTimes') + ': ' + item.sharedCount}>
+                                    )} title={(item as any)._isShared ? t('sharedWithMe') : t('sharedTimes', { count: item.sharedCount ?? 0 })}>
                                         <Users className="h-3 w-3" />
                                         {(item.sharedCount && item.sharedCount > 0) && !((item as any)._isShared) && <span>{item.sharedCount}</span>}
                                         {(item as any)._isShared && !(item as any)._seenAt && (
@@ -259,8 +259,8 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
                                 <p
                                     className={cn("font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors", item.isDone && "line-through text-muted-foreground")}
-                                    onClick={(e) => handleCopy(e, item.name, t('itemName') || "Item Name")}
-                                    title={t('clickToCopy') || "Click to copy"}
+                                    onClick={(e) => handleCopy(e, item.name, t('itemName'))}
+                                    title={t('clickToCopy')}
                                 >
                                     {item.name}
                                 </p>
@@ -331,7 +331,7 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                     <div className={cn(
                                         "flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full shrink-0",
                                         (item as any)._isShared ? "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" : "text-primary bg-primary/10"
-                                    )} title={(item as any)._isShared ? t('sharedWithMe') : t('sharedTimes') + ': ' + item.sharedCount}>
+                                    )} title={(item as any)._isShared ? t('sharedWithMe') : t('sharedTimes', { count: item.sharedCount ?? 0 })}>
                                         <Users className="h-3 w-3" />
                                         {(item.sharedCount && item.sharedCount > 0) && !((item as any)._isShared) && <span>{item.sharedCount}</span>}
                                         {(item as any)._isShared && !(item as any)._seenAt && (
@@ -342,8 +342,8 @@ const ItemCardComponent: React.FC<ItemCardProps> = ({
                                 {item.isUrgent && !item.isDone && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
                                 <p
                                     className={cn("font-semibold break-words text-sm truncate hover:text-foreground cursor-copy transition-colors", item.isDone && "line-through text-muted-foreground")}
-                                    onClick={(e) => handleCopy(e, item.name, t('itemName') || "Item Name")}
-                                    title={t('clickToCopy') || "Click to copy"}
+                                    onClick={(e) => handleCopy(e, item.name, t('itemName'))}
+                                    title={t('clickToCopy')}
                                 >
                                     {item.name}
                                 </p>

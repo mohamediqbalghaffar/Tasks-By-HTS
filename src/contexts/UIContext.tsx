@@ -68,7 +68,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
     const [isMounted, setIsMounted] = useState(false);
 
     // Filter states
-    const [activeTab, setActiveTab] = useState<'tasks' | 'letters'>('tasks');
+    const [activeTab, setActiveTab] = useState<'tasks' | 'letters'>('letters');
     const [isSharedView, setIsSharedView] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<string[]>(['active', 'expired', 'shared']);

@@ -651,8 +651,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 
     "copyText": "کۆپیکردن",
     "copied": "کۆپیکرا",
-    "clickToCopy": "کرتە بکە بۆ کۆپیکردن",
-    "copiedToClipboard": "کۆپیکرا بۆ ڕاگیراو",
+    "clickToCopy": "بۆ کۆپیکردن کرتە بکە",
+    "copiedToClipboard": "لە حافیزە کۆپی کرا",
     "itemName": "ناوی ئایتم",
 
     // Data Analysis Enhancements
@@ -703,6 +703,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     "shareItemDesc": "ئەم بابەتە لەگەڵ بەکارهێنەرێکی تر هاوبەش بکە",
     "sharedWithUsers": "هاوبەشکراوە لەگەڵ {count} بەکارهێنەر",
     "filterCompleted": "تەواوکراو",
-    "filterShared": "هاوبەشکراو"
+    "filterShared": "هاوبەشکراو",
+    "sharedTab": "هاوبەشکراوەکان",
+    "sharedTimes": "{count} جار هاوبەشکراوە",
+    "alreadySharedTitle": "پێشتر هاوبەشکراوە",
+    "alreadySharedDesc": "ئەم بابەتە پێشتر لەگەڵ ئەم بەکارهێنەرە هاوبەشکراوە. ئایا دەتەوێت دووبارە هاوبەشی بکەیت؟",
+    "shareAgain": "دووبارە هاوبەشکردن",
+    "shareCodeHint": "کۆدی هاوبەشکردنی ئەو کەسە بنووسە کە دەتەوێت بابەتەکەی لەگەڵ هاوبەش بکەیت",
+    "allUsers": "هەموو بەکارهێنەران",
+    "sharedType": "جۆری هاوبەش",
+    "receivedBy": "نێردراون لەلایەن",
+    "shareCodePlaceholder": "بۆ نموونە ١٢٣٤٥"
   }
 };
