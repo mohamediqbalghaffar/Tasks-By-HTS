@@ -260,6 +260,9 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         const isAllowed = localStorage.getItem(LOCAL_STORAGE_ALLOWED_KEY) === 'true';
         setIsLocalStorageAllowed(isAllowed);
 
+        // Initial loading state fix
+        setIsLoading(false);
+
         // Request notification permission after a short delay to avoid overwhelming the user
         const timer = setTimeout(() => {
             if ('Notification' in window && Notification.permission === 'default') {
