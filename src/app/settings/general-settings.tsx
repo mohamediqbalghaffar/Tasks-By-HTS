@@ -246,7 +246,7 @@ export function GeneralSettings() {
                                 <Button
                                     className="w-full gap-2"
                                     variant="outline"
-                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases', '_blank')}
+                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases/latest/download/Tasks-by-HTS-Windows.zip', '_blank')}
                                 >
                                     <Download className="h-4 w-4" />
                                     {t('download')}
@@ -267,7 +267,7 @@ export function GeneralSettings() {
                                 <Button
                                     className="w-full gap-2"
                                     variant="outline"
-                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases', '_blank')}
+                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases/latest/download/Tasks-by-HTS-Android.apk', '_blank')}
                                 >
                                     <Download className="h-4 w-4" />
                                     {t('download')}

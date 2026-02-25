@@ -1,0 +1,77 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java (for Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Next.js (Static Export)
+        run: npm run build
+
+      - name: Build Windows App (Electron)
+        run: |
+          # We use electron-builder for the release to get a clean zip
+          npx electron-builder --win --x64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Android APK
+        run: |
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Package Windows Artifact
+        run: |
+          # Locate the generated zip and rename it for the download button
+          # Note: electron-builder usually outputs to 'dist/'
+          mv dist/*.zip Tasks-by-HTS-Windows.zip || true
+          # If no zip, zip the portable/dir version
+          if [ ! -f Tasks-by-HTS-Windows.zip ]; then
+            cd dist/win-unpacked && zip -r ../../Tasks-by-HTS-Windows.zip . && cd ../..
+          fi
+
+      - name: Package Android Artifact
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Tasks-by-HTS-Android.apk
+
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest Automative Release"
+          body: "This release is automatically generated and updated by GitHub Actions."
+          files: |
+            Tasks-by-HTS-Windows.zip
+            Tasks-by-HTS-Android.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
