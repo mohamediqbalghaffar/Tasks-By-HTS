@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTask } from '@/contexts/TaskContext';
 import { useUI } from '@/contexts/UIContext';
@@ -12,10 +13,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { renderDetailContent } from '@/lib/render-detail-content';
 import { useMemo } from 'react';
 
-export default function ItemDetailPage() {
+export function ItemDetailContent() {
     const router = useRouter();
-    const params = useParams();
-    const id = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
 
     const { t, getDateFnsLocale } = useLanguage();
 
@@ -26,7 +27,9 @@ export default function ItemDetailPage() {
         handleReminderChange,
         handleUrgencyChange,
         handleDelete,
-        calculateDefaultReminder
+        calculateDefaultReminder,
+        handleDateChange,
+        handleSaveField
     } = useTask();
 
     const { handleOpenEditField } = useUI();
@@ -37,8 +40,10 @@ export default function ItemDetailPage() {
         handleUrgencyChange,
         handleOpenEditField,
         handleDelete,
-        calculateDefaultReminder
-    }), [handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder]);
+        calculateDefaultReminder,
+        handleDateChange,
+        handleSaveField
+    }), [handlePriorityChange, handleReminderChange, handleUrgencyChange, handleOpenEditField, handleDelete, calculateDefaultReminder, handleDateChange, handleSaveField]);
 
     const itemResult = id ? getItemById(id) : null;
     const item = itemResult ? itemResult.item : null;
@@ -78,5 +83,13 @@ export default function ItemDetailPage() {
                 </div>
             </ScrollArea>
         </div>
+    );
+}
+
+export default function ItemDetailPage() {
+    return (
+        <Suspense fallback={<LoadingAnimation text="Loading..." />}>
+            <ItemDetailContent />
+        </Suspense>
     );
 }

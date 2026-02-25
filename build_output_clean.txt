@@ -1,0 +1,11 @@
+   ▲ Next.js 15.2.8
+   - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+
+> Server Actions are not supported with static export.
+Read more: https://nextjs.org/docs/app/building-your-application/deploying/static-exports#unsupported-features

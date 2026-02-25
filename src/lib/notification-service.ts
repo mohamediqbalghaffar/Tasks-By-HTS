@@ -81,7 +81,7 @@ export function sendNotification(
 
       // If we have item data, navigate to it
       if (data?.id) {
-        window.location.href = `/item/${data.id}`;
+        window.location.href = `/item?id=${data.id}`;
       }
 
       notification.close();

@@ -2,7 +2,25 @@
   "name": "nextn",
   "version": "0.1.0",
   "private": true,
+  "description": "Tasks by HTS - Management Application",
+  "author": "HTS",
   "main": "electron/main.js",
+  "build": {
+    "appId": "com.hts.taskmaster",
+    "productName": "Tasks (by HTS)",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "zip",
+      "cscLink": null
+    },
+    "files": [
+      "out/**/*",
+      "electron/**/*",
+      "package.json"
+    ]
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
@@ -82,6 +100,7 @@
     "concurrently": "^9.2.1",
     "electron": "^40.6.0",
     "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2",
     "eslint": "9.39.2",
     "eslint-config-next": "16.1.6",
     "genkit-cli": "^1.0.4",

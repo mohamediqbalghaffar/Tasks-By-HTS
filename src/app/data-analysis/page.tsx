@@ -353,7 +353,7 @@ export default function DataAnalysisPage() {
 
     const handleScatterClick = React.useCallback((props: any) => {
         if (props && props.id) {
-            router.push(`/item/${props.id}`);
+            router.push(`/item?id=${props.id}`);
         }
     }, [router]);
 

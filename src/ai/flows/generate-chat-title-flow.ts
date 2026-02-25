@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview An AI flow to generate a concise title for a chat conversation.
  *

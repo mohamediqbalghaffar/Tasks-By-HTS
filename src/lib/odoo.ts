@@ -1,6 +1,4 @@
 
-'use server';
-
 // This file contains the logic for a REAL Odoo connection.
 // It requires the 'odoo-xmlrpc' library, which should be in package.json.
 

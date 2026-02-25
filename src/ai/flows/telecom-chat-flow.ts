@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview AI flow for a telecom/administration assistant chatbot.
  *

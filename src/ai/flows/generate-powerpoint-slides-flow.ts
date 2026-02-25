@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview AI flow to generate structured content for a PowerPoint presentation
  * based on tasks and notes.
