@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
         pathname: '/v0/b/firebasestudio-89520.appspot.com/o/**',
       },
     ],
+    unoptimized: true,
   },
   experimental: {
     // This is required to allow requests from the development environment's origin.
@@ -36,6 +37,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   sw: "service-worker.js",
 });
 
-export default withPWA(nextConfig);
+// export default withPWA(nextConfig);
+export default nextConfig;
 
 
