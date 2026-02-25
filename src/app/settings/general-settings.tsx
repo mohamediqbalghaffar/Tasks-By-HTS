@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogFooter } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Languages, RotateCcw, Moon, Sun, Monitor, Smartphone, Palette, Database, Save, Upload, Trash2, Info } from 'lucide-react';
+import { Languages, RotateCcw, Moon, Sun, Monitor, Smartphone, Palette, Database, Save, Upload, Trash2, Info, Download } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -214,6 +214,65 @@ export function GeneralSettings() {
                                     <AlertDialogFooter className="gap-2"><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={handleClearAllData} className="bg-destructive hover:bg-destructive/90">{t('confirmDelete')}</AlertDialogAction></AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* App Downloads Section */}
+            <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2 text-primary">
+                    <Download className="h-5 w-5" />
+                    {t('downloadApp')}
+                </h2>
+                <Card className="border-none shadow-md bg-card/50 backdrop-blur-sm">
+                    <CardContent className="space-y-6 pt-6">
+                        <p className="text-sm text-muted-foreground">
+                            {t('downloadAppDescription')}
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Windows Download */}
+                            <div className="space-y-3 p-4 rounded-xl border border-primary/10 bg-primary/5">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                                        <Monitor className="h-5 w-5" />
+                                    </div>
+                                    <h3 className="font-semibold">{t('downloadWindowsExe')}</h3>
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {t('downloadExeInfoDesc')}
+                                </p>
+                                <Button
+                                    className="w-full gap-2"
+                                    variant="outline"
+                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases', '_blank')}
+                                >
+                                    <Download className="h-4 w-4" />
+                                    {t('download')}
+                                </Button>
+                            </div>
+
+                            {/* Android Download */}
+                            <div className="space-y-3 p-4 rounded-xl border border-primary/10 bg-primary/5">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                                        <Smartphone className="h-5 w-5" />
+                                    </div>
+                                    <h3 className="font-semibold">{t('downloadAndroidApk')}</h3>
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {t('downloadApkInfoDesc')}
+                                </p>
+                                <Button
+                                    className="w-full gap-2"
+                                    variant="outline"
+                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases', '_blank')}
+                                >
+                                    <Download className="h-4 w-4" />
+                                    {t('download')}
+                                </Button>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
