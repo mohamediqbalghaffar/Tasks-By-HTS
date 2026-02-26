@@ -64,7 +64,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 isOpen && "rtl:translate-x-0"
             )}>
                 {/* Header with close button */}
-                <div className="p-4 border-b flex justify-end">
+                <div className="drawer-safe-top px-4 pb-2 border-b flex justify-end">
                     <button
                         onClick={onClose}
                         className="h-10 w-10 flex items-center justify-center rounded-full active:bg-muted transition-colors text-foreground"
@@ -113,7 +113,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 </nav>
 
                 {/* Bottom Actions */}
-                <div className="p-4 border-t space-y-1">
+                <div className="drawer-safe-bottom px-4 pt-2 border-t space-y-1">
                     <Link
                         href="/settings"
                         onClick={onClose}

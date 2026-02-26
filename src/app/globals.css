@@ -594,3 +594,68 @@ body {
   --view-font-size: 16px;
   --view-button-height: 44px;
 }
+
+/* ============================================ */
+/* SAFE AREA INSETS — Notch / Punch-hole Support */
+/* Works on iOS (notch, Dynamic Island), Android  */
+/* (punch-hole, rounded corners), and all PWAs.   */
+/* Requires viewport-fit=cover in <meta viewport>  */
+/* ============================================ */
+
+:root {
+  /* Safe area inset CSS variables */
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+
+  /* Computed heights that include safe area */
+  --mobile-header-height: calc(3.5rem + var(--sat));
+  /* 56px + top notch */
+  --mobile-bottom-nav-height: calc(4rem + var(--sab));
+  /* 64px + bottom home indicator */
+}
+
+/* Safe area padding utilities */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Combined safe area inset for header: own height + top inset */
+.h-safe-header {
+  height: var(--mobile-header-height);
+  padding-top: var(--sat);
+}
+
+/* Combined safe area inset for bottom nav: own height + bottom inset */
+.h-safe-bottom-nav {
+  height: var(--mobile-bottom-nav-height);
+  padding-bottom: var(--sab);
+}
+
+/* Main scroll content: must clear both header and bottom nav */
+.safe-scroll-area {
+  padding-top: var(--mobile-header-height);
+  padding-bottom: var(--mobile-bottom-nav-height);
+}
+
+/* Drawer safe area: drawer spans full height, top of content must clear notch */
+.drawer-safe-top {
+  padding-top: max(1rem, var(--sat));
+}
+
+.drawer-safe-bottom {
+  padding-bottom: max(1rem, var(--sab));
+}

@@ -31,7 +31,7 @@ export function MobileHeader({ onMenuClick, onActionClick }: MobileHeaderProps) 
     const showActionButton = pathname === '/' || pathname.startsWith('/archives');
 
     return (
-        <header className="h-14 bg-card border-b flex items-center justify-between px-4 sticky top-0 z-40 shadow-sm shrink-0">
+        <header className="h-safe-header bg-card border-b flex items-end justify-between px-4 pb-2 sticky top-0 z-40 shadow-sm shrink-0">
             <button
                 onClick={onMenuClick}
                 className="h-10 w-10 flex items-center justify-center -ml-2 rounded-full active:bg-muted transition-colors text-foreground"

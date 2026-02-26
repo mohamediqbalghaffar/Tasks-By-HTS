@@ -246,7 +246,14 @@ export function GeneralSettings() {
                                 <Button
                                     className="w-full gap-2"
                                     variant="outline"
-                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases/latest/download/Tasks-by-HTS-Windows.zip', '_blank')}
+                                    onClick={() => {
+                                        const a = document.createElement('a');
+                                        a.href = 'https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases/download/v1.0.0/Tasks-by-HTS-Windows.zip';
+                                        a.download = 'Tasks-by-HTS-Windows.zip';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                    }}
                                 >
                                     <Download className="h-4 w-4" />
                                     {t('download')}
@@ -267,7 +274,14 @@ export function GeneralSettings() {
                                 <Button
                                     className="w-full gap-2"
                                     variant="outline"
-                                    onClick={() => window.open('https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases/latest/download/Tasks-by-HTS-Android.apk', '_blank')}
+                                    onClick={() => {
+                                        const a = document.createElement('a');
+                                        a.href = 'https://github.com/mohamediqbalghaffar/Tasks-By-HTS/releases/download/v1.0.0/Tasks-by-HTS-Android.apk';
+                                        a.download = 'Tasks-by-HTS-Android.apk';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                    }}
                                 >
                                     <Download className="h-4 w-4" />
                                     {t('download')}

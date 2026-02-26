@@ -19,7 +19,7 @@ export function MobileBottomNav() {
     ];
 
     return (
-        <nav className="shrink-0 w-full h-16 bg-background/80 backdrop-blur-xl border-t border-border/50 flex justify-around items-center z-40 px-2 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+        <nav className="shrink-0 w-full h-safe-bottom-nav bg-background/80 backdrop-blur-xl border-t border-border/50 flex justify-around items-start pt-2 z-40 px-2 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
             {navItems.map(item => {
                 const Icon = item.icon;
                 const isActive = (pathname === '/' && item.href === '/') ||
