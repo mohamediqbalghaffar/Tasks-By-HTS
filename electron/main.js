@@ -14,6 +14,7 @@ function createMainWindow() {
         width: 1200,
         height: 800,
         show: false,
+        icon: path.join(__dirname, '../public/logo.png'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,

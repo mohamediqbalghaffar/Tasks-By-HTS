@@ -8,16 +8,18 @@
   "build": {
     "appId": "com.hts.taskmaster",
     "productName": "Tasks (by HTS)",
+    "icon": "public/logo.png",
     "directories": {
       "output": "dist"
     },
     "win": {
-      "target": "zip",
+      "target": "dir",
       "cscLink": null
     },
     "files": [
       "out/**/*",
       "electron/**/*",
+      "public/logo.png",
       "package.json"
     ]
   },
