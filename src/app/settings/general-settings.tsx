@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel, AlertDialogFooter } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Languages, RotateCcw, Moon, Sun, Monitor, Smartphone, Palette, Database, Save, Upload, Trash2, Info, Download } from 'lucide-react';
+import { Languages, RotateCcw, Moon, Sun, Monitor, Smartphone, Palette, Database, Save, Upload, Trash2, Info, Download, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -33,6 +33,60 @@ export function GeneralSettings() {
     const { currentUser } = useAuth();
 
     const loadFileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // Update state
+    const [updateStatus, setUpdateStatus] = React.useState<'idle' | 'checking' | 'up-to-date' | 'update-found' | 'error'>('idle');
+    const [currentVersionInfo, setCurrentVersionInfo] = React.useState<{ version: string; buildDate: string } | null>(null);
+    const [needsReload, setNeedsReload] = React.useState(false);
+
+    // Load current version on mount
+    React.useEffect(() => {
+        fetch('/version.json?nocache=' + Date.now())
+            .then(r => r.json())
+            .then(data => setCurrentVersionInfo(data))
+            .catch(() => { });
+    }, []);
+
+    const handleCheckForUpdates = async () => {
+        setUpdateStatus('checking');
+        setNeedsReload(false);
+        try {
+            // 1. Force service worker to check for a new version
+            let swUpdated = false;
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (const reg of regs) {
+                    await reg.update();
+                    if (reg.waiting) {
+                        // There's a new SW waiting — send skipWaiting
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        swUpdated = true;
+                    }
+                }
+            }
+
+            // 2. Fetch the deployed version.json (bypass cache)
+            const res = await fetch('/version.json?nocache=' + Date.now(), { cache: 'no-store' });
+            const latest = await res.json();
+
+            if (currentVersionInfo && latest.version !== currentVersionInfo.version) {
+                setCurrentVersionInfo(latest);
+                setUpdateStatus('update-found');
+                setNeedsReload(true);
+            } else if (swUpdated) {
+                setUpdateStatus('update-found');
+                setNeedsReload(true);
+            } else {
+                setUpdateStatus('up-to-date');
+            }
+        } catch {
+            setUpdateStatus('error');
+        }
+    };
+
+    const handleReloadNow = () => {
+        window.location.reload();
+    };
 
     // Simplified Font Options
     const uiFontOptions = [
@@ -287,6 +341,76 @@ export function GeneralSettings() {
                                     {t('download')}
                                 </Button>
                             </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* App Update Section */}
+            <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2 text-primary">
+                    <RefreshCw className="h-5 w-5" />
+                    {t('updateApp')}
+                </h2>
+                <Card className="border-none shadow-md bg-card/50 backdrop-blur-sm">
+                    <CardContent className="pt-6 space-y-4">
+                        {/* Current version info */}
+                        {currentVersionInfo && (
+                            <div className="flex items-center justify-between text-sm rounded-lg bg-muted/40 px-4 py-3">
+                                <div className="space-y-0.5">
+                                    <p className="font-medium">{t('currentVersion')}</p>
+                                    <p className="text-xs text-muted-foreground">{t('buildDate')}: {currentVersionInfo.buildDate}</p>
+                                </div>
+                                <span className="font-mono text-xs bg-primary/10 text-primary px-2 py-1 rounded-md">
+                                    {currentVersionInfo.version}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Status messages */}
+                        {updateStatus === 'up-to-date' && (
+                            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-500/10 rounded-lg px-4 py-3">
+                                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                <span>{t('upToDate')}</span>
+                            </div>
+                        )}
+                        {updateStatus === 'update-found' && (
+                            <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 rounded-lg px-4 py-3">
+                                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                <span>{t('updateAvailable')}</span>
+                            </div>
+                        )}
+                        {updateStatus === 'error' && (
+                            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+                                <AlertCircle className="h-4 w-4 shrink-0" />
+                                <span>{t('updateErrorDesc')}</span>
+                            </div>
+                        )}
+
+                        {/* Action buttons */}
+                        <div className="flex gap-3">
+                            <Button
+                                className="flex-1 gap-2"
+                                variant="outline"
+                                disabled={updateStatus === 'checking'}
+                                onClick={handleCheckForUpdates}
+                            >
+                                {updateStatus === 'checking' ? (
+                                    <><Loader2 className="h-4 w-4 animate-spin" />{t('checkingForUpdates')}</>
+                                ) : (
+                                    <><RefreshCw className="h-4 w-4" />{t('checkForUpdates')}</>
+                                )}
+                            </Button>
+
+                            {needsReload && (
+                                <Button
+                                    className="flex-1 gap-2"
+                                    onClick={handleReloadNow}
+                                >
+                                    <RotateCcw className="h-4 w-4" />
+                                    {t('reloadNow')}
+                                </Button>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

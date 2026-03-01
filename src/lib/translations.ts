@@ -714,6 +714,24 @@ export const translations: Record<Locale, Record<string, string>> = {
     "allUsers": "هەموو بەکارهێنەران",
     "sharedType": "جۆری هاوبەش",
     "receivedBy": "نێردراون لەلایەن",
-    "shareCodePlaceholder": "بۆ نموونە ١٢٣٤٥"
+    "shareCodePlaceholder": "بۆ نموونە ١٢٣٤٥",
+
+    // App Update
+    "updateApp": "نوێکردنەوەی ئەپ",
+    "checkForUpdates": "پشکنینی نوێکردنەوە",
+    "updateAvailable": "نوێکردنەوە بەردەستە",
+    "upToDate": "ئەپەکەت نوێترینە",
+    "updating": "نوێکردنەوە...",
+    "checkingForUpdates": "پشکنینی نوێکردنەوە...",
+    "currentVersion": "وەشانی ئێستا",
+    "latestVersion": "دوایین وەشان",
+    "updateNow": "نوێکردنەوەی ئێستا",
+    "updateSuccess": "ئەپەکە نوێکرایەوە",
+    "updateSuccessDesc": "ئەپەکە بە سەرکەوتوویی نوێکرایەوە. تکایە پەڕەکە دووبارە بکەوە.",
+    "updateError": "هەڵە لە نوێکردنەوە",
+    "updateErrorDesc": "نەتوانرا پشکنینی نوێکردنەوە بکرێت. تکایە پەیوەندی ئینتەرنێتەکەت بپشکنە.",
+    "buildDate": "بەرواری بیلد",
+    "reloadRequired": "پێویستە پەڕەکە دووبارە بکەویت",
+    "reloadNow": "دووبارە کردنەوە"
   }
 };
