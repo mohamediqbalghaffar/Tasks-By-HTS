@@ -64,7 +64,13 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 isOpen && "rtl:translate-x-0"
             )}>
                 {/* Header with close button */}
-                <div className="drawer-safe-top px-4 pb-2 border-b flex justify-end">
+                <div className="drawer-safe-top px-4 pb-2 border-b flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm flex items-center justify-center flex-shrink-0">
+                            <img src="/logo.png" alt="Tasks (by HTS)" className="w-full h-full object-contain" />
+                        </div>
+                        <span className="text-sm font-semibold text-foreground">Tasks (by HTS)</span>
+                    </div>
                     <button
                         onClick={onClose}
                         className="h-10 w-10 flex items-center justify-center rounded-full active:bg-muted transition-colors text-foreground"

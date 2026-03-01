@@ -243,11 +243,11 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
 
                 {/* Brand Logo */}
                 <div className="w-full px-4 mb-6 flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white text-xl shadow-lg"
-                        style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 4px 20px rgba(124,58,237,0.5)' }}>
-                        T
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg flex items-center justify-center"
+                        style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+                        <img src="/logo.png" alt="Tasks (by HTS)" className="w-full h-full object-contain" />
                     </div>
-                    <span className="text-white/60 text-[10px] font-medium tracking-widest uppercase">by HTS</span>
+                    <span className="text-white/80 text-[10px] font-semibold tracking-wide">Tasks (by HTS)</span>
                 </div>
 
                 {/* New Item Button */}

@@ -1,6 +1,6 @@
 {
-    "name": "Tasks By HTS",
-    "short_name": "HTS Tasks",
+    "name": "Tasks (by HTS)",
+    "short_name": "Tasks (by HTS)",
     "description": "Task management application for HTS Group",
     "start_url": "/",
     "display": "standalone",

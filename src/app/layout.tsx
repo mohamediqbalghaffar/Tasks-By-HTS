@@ -4,7 +4,7 @@ import './globals.css';
 import { ClientLayout } from './client-layout';
 
 export const metadata: Metadata = {
-  title: "Tasks By HTS",
+  title: "Tasks (by HTS)",
   description: "Task management system for HTS Group",
   manifest: "/manifest.json",
   themeColor: "#000000",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Tasks By HTS",
+    title: "Tasks (by HTS)",
   },
   icons: {
     icon: "/icons/icon-192x192.png",
