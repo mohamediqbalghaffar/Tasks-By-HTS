@@ -1,7 +1,7 @@
 'use client';
 
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useEffect, useState, useCallback } from 'react';
 import { useUI } from '@/contexts/UIContext';
 import { cn } from '@/lib/utils';
 
@@ -9,11 +9,18 @@ export function MotionBackground() {
     const { theme } = useUI();
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [isClient, setIsClient] = useState(false);
+    const [isDark, setIsDark] = useState(false);
 
+    // Resolve dark mode in an effect to avoid SSR hydration mismatch
     useEffect(() => {
         setIsClient(true);
+
+        const resolvedDark =
+            theme === 'dark' ||
+            (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        setIsDark(resolvedDark);
+
         const handleMouseMove = (e: MouseEvent) => {
-            // Calculate normalized coordinates (-1 to 1)
             const x = (e.clientX / window.innerWidth) * 2 - 1;
             const y = (e.clientY / window.innerHeight) * 2 - 1;
             setMousePosition({ x, y });
@@ -21,20 +28,14 @@ export function MotionBackground() {
 
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
-
-    // Determine effective theme
-    const isDark = typeof window !== 'undefined' && (
-        theme === 'dark' || 
-        (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    );
+    }, [theme]);
 
     if (!isClient) return null;
 
     return (
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-[-1]">
             {/* Primary Abstract Blur Elements */}
-            <motion.div 
+            <motion.div
                 className={cn(
                     "absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full blur-[100px] opacity-30",
                     isDark ? "bg-violet-900/40" : "bg-violet-300/40"
@@ -50,7 +51,7 @@ export function MotionBackground() {
                     y: { type: "spring", stiffness: 50, damping: 20 }
                 }}
             />
-            <motion.div 
+            <motion.div
                 className={cn(
                     "absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full blur-[120px] opacity-20",
                     isDark ? "bg-cyan-900/40" : "bg-cyan-300/40"
@@ -87,8 +88,8 @@ export function MotionBackground() {
                         alt="HTS Logo Background"
                         className={cn(
                             "w-full h-full object-contain transition-all duration-1000",
-                            isDark 
-                                ? "opacity-[0.03] drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] grayscale mix-blend-screen" 
+                            isDark
+                                ? "opacity-[0.03] drop-shadow-[0_0_30px_rgba(255,255,255,0.1)] grayscale mix-blend-screen"
                                 : "opacity-[0.04] grayscale drop-shadow-xl mix-blend-multiply"
                         )}
                         animate={{
@@ -103,9 +104,9 @@ export function MotionBackground() {
                     />
                 </motion.div>
             </div>
-            
+
             {/* Ambient subtle noise overlay for texture */}
-            <div 
+            <div
                 className="absolute inset-0 opacity-[0.015]"
                 style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
