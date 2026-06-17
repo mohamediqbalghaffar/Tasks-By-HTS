@@ -9,6 +9,8 @@ import { UIProvider, useUI } from '@/contexts/UIContext';
 import { TaskProvider, useTask } from '@/contexts/TaskContext';
 import { useEffect, useState } from 'react';
 import * as React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MotionBackground } from '@/components/ui/motion-background';
 import LoadingAnimation from '@/components/ui/loading-animation';
 import { User2, Settings2, PlusCircle, ListTodo, FileText, ChevronRight, LogOut, AlignLeft, AlignRight, Brain, Loader2, BarChart3, Archive, LayoutDashboard, GitMerge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -247,13 +249,18 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
     // Desktop Layout
     return (
         <div className={cn(
-            "flex h-screen transition-all duration-700",
+            "flex h-screen transition-all duration-700 relative",
             theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches)
                 ? "bg-transparent"
-                : "bg-gradient-to-br from-[#f0f2f8] via-[#e8eaf6] to-[#f3e8ff]"
+                : "bg-transparent" // Set to transparent so MotionBackground shows through
         )}>
+            <MotionBackground />
+            
             {/* Sidebar */}
-            <aside
+            <motion.aside
+                initial={{ x: -100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
                 className={cn(
                     "w-48 flex-shrink-0 flex flex-col items-center py-5 relative overflow-hidden transition-all duration-500",
                     "border-l border-white/10 shadow-2xl"
@@ -316,20 +323,35 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
                         const Icon = link.icon;
                         return (
                             <Link key={link.href} href={link.href} className="w-full">
-                                <div className={cn(
-                                    "flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 w-full group",
-                                    isActive
-                                        ? "text-white shadow-lg"
-                                        : "text-white/50 hover:text-white/80 hover:bg-white/10"
-                                )}
+                                <motion.div 
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    className={cn(
+                                        "flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 w-full group relative overflow-hidden",
+                                        isActive
+                                            ? "text-white shadow-lg"
+                                            : "text-white/50 hover:text-white/80 hover:bg-white/10"
+                                    )}
                                     style={isActive ? {
                                         background: 'linear-gradient(135deg, rgba(124,58,237,0.6), rgba(6,182,212,0.4))',
                                         boxShadow: '0 2px 16px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
                                     } : {}}>
                                     <Icon className={cn("h-4 w-4 shrink-0 transition-all", isActive ? "text-cyan-300" : "group-hover:text-white/70")} />
-                                    <span className="text-xs font-semibold truncate">{link.label}</span>
-                                    {isActive && <div className="mr-auto w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
-                                </div>
+                                    <span className="text-xs font-semibold truncate relative z-10">{link.label}</span>
+                                    {isActive && <div className="mr-auto w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse relative z-10" />}
+                                    
+                                    {/* Active Link Glow */}
+                                    {isActive && (
+                                        <motion.div 
+                                            layoutId="activeNavBackground"
+                                            className="absolute inset-0 z-0 rounded-xl"
+                                            style={{
+                                                background: 'linear-gradient(135deg, rgba(124,58,237,0.6), rgba(6,182,212,0.4))',
+                                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
+                                            }}
+                                        />
+                                    )}
+                                </motion.div>
                             </Link>
                         );
                     })}
@@ -344,11 +366,20 @@ function RootLayoutContent({ children }: { children: React.ReactNode }) {
                 <div className="w-full px-3">
                     <ProfileSection />
                 </div>
-            </aside>
+            </motion.aside>
 
-            <main className="flex-1 overflow-y-auto">
-                {children}
-            </main>
+            <AnimatePresence mode="wait">
+                <motion.main 
+                    key={pathname}
+                    initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -15, scale: 0.98 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="flex-1 overflow-y-auto relative z-10"
+                >
+                    {children}
+                </motion.main>
+            </AnimatePresence>
 
             <EditDialog />
         </div>
